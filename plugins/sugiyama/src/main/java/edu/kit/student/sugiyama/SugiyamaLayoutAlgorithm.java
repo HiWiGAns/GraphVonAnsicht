@@ -159,9 +159,16 @@ public class SugiyamaLayoutAlgorithm<G extends DirectedGraph>
 		logger.info("drawing edges");
 		drawer.drawEdges(wrappedGraph);
 	}
-	
-	//draw given edges new, also take paths into account
-	//positions of every vertex is set and should not be changed
+
+
+	/**
+	 * Draws given edges new, also take paths into account.
+	 * Positions of every vertex is set and should not be changed.
+	 *
+	 * @param vertices given vertices with set coordinates
+	 * @param edges edges that connect vertices of adjacent layers
+	 * @param paths paths describing edges connecting vertices of two not adjacent layers
+	 */
 	public void drawEdgesNew(Set<Vertex> vertices, Set<DirectedEdge> edges, Set<DirectedSupplementEdgePath> paths){
 		SugiyamaGraph sugyGraph = new SugiyamaGraph("",vertices, edges, paths);
 		drawer.drawEdges(sugyGraph);	//draw edges

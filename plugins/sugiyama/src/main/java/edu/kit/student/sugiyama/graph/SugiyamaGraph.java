@@ -10,7 +10,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.Vector;
-import java.util.stream.Collectors;
 
 import edu.kit.student.graphmodel.DefaultGraphLayering;
 import edu.kit.student.graphmodel.DefaultVertex;
