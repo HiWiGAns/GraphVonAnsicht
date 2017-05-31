@@ -181,6 +181,7 @@ public class VertexShape extends GAnsGraphElement {
 
 		void setColor(Color color) {
 			this.color = color;
+			updateBorder();
 		}
 	}
 }

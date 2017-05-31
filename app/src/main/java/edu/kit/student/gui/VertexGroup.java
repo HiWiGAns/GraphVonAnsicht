@@ -35,7 +35,7 @@ public class VertexGroup {
 		this.name = name;
 		this.label = new Label(name);
 		this.picker = new ColorPicker();
-		picker.setOnAction(action -> setColor(picker.getValue()));
+//		picker.setOnAction(action -> setColor(picker.getValue()));
 		
 		addVertices(vertices);
 	}

@@ -5,7 +5,13 @@ import edu.kit.student.util.LanguageManager;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
-import javafx.scene.control.*;
+import javafx.scene.control.Button;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.Dialog;
+import javafx.scene.control.ListCell;
+import javafx.scene.control.ListView;
+import javafx.scene.control.SelectionMode;
+import javafx.scene.control.TextInputDialog;
 import javafx.scene.image.Image;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -14,23 +20,35 @@ import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 
 class GroupManager {
 
-	final private GraphViewGraphFactory factory;
+	private final GraphViewGraphFactory factory;
 
-    private List<Integer> groupIdsBacking;
-    private ObservableList<Integer> groupIds;
-    final private Map<Integer, VertexGroup> groupMap;
-    final private List<Integer> removedGroups;
+    private final ObservableList<VertexGroup> groups;
+
+    // Stores the ordering of the groups, at the time the dialog was started.
+	// If the dialog is cancelled, the items in groups are set to the items in this list,
+	// resulting in the earlier set and ordering.
+    // If the changes are applied, this list is cleared.
+	private final List<VertexGroup> groupBackup;
+
+    // Stores the colors of the groups, at the time the dialog was started.
+	// If the dialog is cancelled, the colors of the VertexGroups are reverted.
+	// If the changes are applied, this map is cleared.
+	private final Map<VertexGroup, Color> groupColorBackup;
 
 	GroupManager(GraphViewGraphFactory factory) {
 		this.factory = factory;
-		groupIdsBacking = new LinkedList<>();
-		groupIds = FXCollections.observableList(groupIdsBacking);
-		groupMap = new HashMap<>();
-		removedGroups = new LinkedList<>();
+		groups = FXCollections.observableArrayList();
+		groupColorBackup = new HashMap<>();
+		groupBackup = new ArrayList<>();
 	}
 	
 	boolean openAddGroupDialog(Set<ViewableVertex> vertices) {
@@ -44,47 +62,47 @@ class GroupManager {
     	Optional<String> result = dialog.showAndWait();
     	if (result.isPresent()){
     		VertexGroup group = new VertexGroup(factory, result.get(), vertices);
-    		groupIds.add(group.getId());
-    		groupMap.put(group.getId(), group);
+    		groups.add(group);
     		return true;
     	}
     	return false;
     }
 
 	void openGroupDialog() {
+		backup();
+
 		Dialog<ButtonType> dialog = new Dialog<>();
-		ListView<Integer> groupList = new ListView<>();
+		ListView<VertexGroup> groupList = new ListView<>();
 		groupList.getSelectionModel().setSelectionMode(SelectionMode.SINGLE);
-		groupList.setItems(groupIds);
+		groupList.setItems(groups);
 		groupList.setCellFactory(list -> new GroupListCell());
-		
+
 		Button upButton = new Button(LanguageManager.getInstance().get("wind_group_up"));
 		upButton.setDisable(true);
 		upButton.setOnAction(event -> {
-            Integer groupId = groupList.getSelectionModel().getSelectedItem();
-            int currentPos = groupIds.indexOf(groupId);
-            groupIds.remove(groupId);
-            groupIds.add(currentPos - 1, groupId);
-            groupList.getSelectionModel().select(groupId);
+            VertexGroup group = groupList.getSelectionModel().getSelectedItem();
+            int currentPos = groups.indexOf(group);
+            groups.remove(group);
+            groups.add(currentPos - 1, group);
+            groupList.getSelectionModel().select(group);
         });
 		
 		Button downButton = new Button(LanguageManager.getInstance().get("wind_group_down"));
 		downButton.setDisable(true);
 		downButton.setOnAction(event -> {
-            Integer groupId = groupList.getSelectionModel().getSelectedItem();
-            int currentPos = groupIds.indexOf(groupId);
-            groupIds.remove(groupId);
-            groupIds.add(currentPos + 1, groupId);
-            groupList.getSelectionModel().select(groupId);
+            VertexGroup group = groupList.getSelectionModel().getSelectedItem();
+            int currentPos = groups.indexOf(group);
+            groups.remove(group);
+            groups.add(currentPos + 1, group);
+            groupList.getSelectionModel().select(group);
         });
 		
 		Button removeButton = new Button(LanguageManager.getInstance().get("wind_group_remove"));
 		removeButton.setDisable(true);
 		removeButton.setOnAction(event -> {
-            Integer groupId = groupList.getSelectionModel().getSelectedItem();
+            VertexGroup group = groupList.getSelectionModel().getSelectedItem();
             groupList.getSelectionModel().clearSelection();
-            groupIds.remove(groupId);
-            removedGroups.add(groupId);
+            groups.remove(group);
             groupList.refresh();
         });
 		
@@ -94,9 +112,9 @@ class GroupManager {
                 downButton.setDisable(true);
                 removeButton.setDisable(true);
             } else {
-                int index = groupIds.indexOf(newValue);
+                int index = groups.indexOf(newValue);
                 upButton.setDisable(index == 0);
-                downButton.setDisable(index == groupIds.size() - 1);
+                downButton.setDisable(index == groups.size() - 1);
                 removeButton.setDisable(false);
             }
         });
@@ -106,46 +124,59 @@ class GroupManager {
 		VBox root = new VBox(groupList, buttonBox);
 		
 		dialog.getDialogPane().setContent(root);
-		dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.APPLY);
+		dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CLOSE, ButtonType.APPLY);
 		dialog.setTitle(LanguageManager.getInstance().get("wind_group_title"));
 		dialog.setHeaderText(null);
 		dialog.setGraphic(null);
 		Stage stage = (Stage) dialog.getDialogPane().getScene().getWindow();
     	stage.getIcons().add(new Image("gans_icon.png"));
 
-		LinkedList<Integer> groupIdsAbortBackup = new LinkedList<>(this.groupIds);
-		Map<Integer,Color> groupColorAbortBackup = new HashMap<>();
-		for(Integer id : groupMap.keySet()) {
-			groupColorAbortBackup.put(id,groupMap.get(id).getColor());
-		}
-		final Button btApply = (Button) dialog.getDialogPane().lookupButton(ButtonType.APPLY);
-        btApply.addEventFilter(ActionEvent.ACTION, event -> {
-		 	removedGroups.forEach(groupId -> groupMap.remove(groupId).dissolve());
-			removedGroups.clear();
-            event.consume();
+		final Button btnApply = (Button) dialog.getDialogPane().lookupButton(ButtonType.APPLY);
+        btnApply.addEventFilter(ActionEvent.ACTION, event -> {
+			applyChanges();
+			backup();
+			event.consume();
          });
 		Optional<ButtonType> result = dialog.showAndWait();
-		if(result.isPresent()) {
-			if(result.get() == ButtonType.OK) {
-				removedGroups.forEach(groupId -> groupMap.remove(groupId).dissolve());
-				removedGroups.clear();
-			}
+		if (result.isPresent() && result.get() == ButtonType.OK) {
+			applyChanges();
 		} else {
-			removedGroups.clear();
-			this.groupIdsBacking = new LinkedList<>(groupIdsAbortBackup);
-			this.groupIds = FXCollections.observableList(groupIdsBacking);
-			for(Integer id : groupColorAbortBackup.keySet()) {
-				groupMap.get(id).setColor(groupColorAbortBackup.get(id));
-			}
+		    restore();
 		}
 	}
 
-	private class GroupListCell extends ListCell<Integer> {
+	private void backup() {
+		groupColorBackup.clear();
+		for(VertexGroup group : groups) {
+			groupColorBackup.put(group, group.getColor());
+		}
+		groupBackup.clear();
+		groupBackup.addAll(groups);
+	}
+
+	private void restore() {
+		groups.clear();
+		groups.addAll(groupBackup);
+		for(Map.Entry<VertexGroup, Color> entry : groupColorBackup.entrySet()) {
+			entry.getKey().setColor(entry.getValue());
+		}
+	}
+
+	private void applyChanges() {
+		for (VertexGroup group : groupBackup) {
+			if (groups.contains(group))
+                group.setColor(group.getPicker().getValue());
+			else
+				group.dissolve();
+		}
+	}
+
+	private class GroupListCell extends ListCell<VertexGroup> {
+
 		@Override
-		public void updateItem(Integer item, boolean empty) {
-			super.updateItem(item, empty);
-			VertexGroup group = groupMap.get(item);
-			//TODO: maybe check for made changes and only apply them.
+		public void updateItem(VertexGroup group, boolean empty) {
+			super.updateItem(group, empty);
+
 			if(!empty && group != null) {
 				Region spacer = new Region();
 				HBox box = new HBox(group.getLabel(), spacer, group.getPicker());
