@@ -8,8 +8,13 @@ import edu.kit.student.plugin.EdgeFilter;
 import edu.kit.student.plugin.LayoutOption;
 import edu.kit.student.plugin.VertexFilter;
 import edu.kit.student.util.LanguageManager;
+import javafx.collections.FXCollections;
+import javafx.collections.ListChangeListener;
+import javafx.collections.ObservableList;
 import javafx.collections.SetChangeListener;
+import javafx.event.ActionEvent;
 import javafx.scene.Node;
+import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.MenuItem;
@@ -19,7 +24,6 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -39,7 +43,10 @@ public class GraphView extends Pane {
     
 	private GroupManager groupManager;
 	
-	private GAnsMediator mediator;
+	private final GAnsMediator mediator;
+
+	private final Collection<VertexFilter> lastVertexFilter = new LinkedList<>();
+	private final Collection<EdgeFilter> lastEdgeFilter = new LinkedList<>();
 
 	/**
 	 * Constructor.
@@ -61,15 +68,22 @@ public class GraphView extends Pane {
 	 *            The graph to be visualized in the view.
 	 */
 	public void setGraph(ViewableGraph graph) {
+	    // TODO: When analyzing usages of setGraph, it shows that a graph is only set after
+		// 		 creating a new GraphView. It should be discussed if a GraphView exists only
+		//		 to hold one graph or can be reused. If it should not be reused, the graph
+		//		 could be set in the constructor.
 		graphFactory = new GraphViewGraphFactory(graph);
 		groupManager = new GroupManager(graphFactory);
+
+		lastEdgeFilter.addAll(graphFactory.getGraph().getActiveEdgeFilter());
+		lastVertexFilter.addAll(graphFactory.getGraph().getActiveVertexFilter());
 
 		getChildren().addAll(graphFactory.getGraphicalElements());
 	}
 	
 	public void reloadGraph() {
 		graphFactory.refreshGraph();
-		
+
 		getChildren().clear();
 		getChildren().addAll(graphFactory.getGraphicalElements());
 		double maxX = 0;
@@ -203,23 +217,45 @@ public class GraphView extends Pane {
 	
 	public void openFilterDialog() {
 
-		List<VertexFilter> selectedVertexFilter = new LinkedList<>(this.graphFactory.getGraph().getActiveVertexFilter());
+        LinkedList<VertexFilter> selectedVertexFilter = new LinkedList<>(this.graphFactory.getGraph().getActiveVertexFilter());
+		ObservableList<VertexFilter> obsvervedVertexFilter = FXCollections.observableList(selectedVertexFilter);
 		List<VertexFilter> vertexBackup = new LinkedList<>(selectedVertexFilter);
-		List<EdgeFilter> selectedEdgeFilter = new LinkedList<>(this.graphFactory.getGraph().getActiveEdgeFilter());
-		List<EdgeFilter> edgeBackup = new LinkedList<>(selectedEdgeFilter);
-    	FilterDialog fd = new FilterDialog(selectedVertexFilter, selectedEdgeFilter);
 
-		Optional<ButtonType> result = fd.showAndWait();
-		if(result.isPresent() && result.get() == ButtonType.OK &&
-		        !(listEqualsNoOrder(vertexBackup, selectedVertexFilter) &&
-		        listEqualsNoOrder(edgeBackup, selectedEdgeFilter))) 
-		{ 
-		    // Only redraw if OK was pressed and if there was a change in the selection.
-			this.graphFactory.getGraph().setVertexFilter(selectedVertexFilter);
-			this.graphFactory.getGraph().setEdgeFilter(selectedEdgeFilter);
-			this.layout.applyLayout();
-            reloadGraph();
-		}
+		LinkedList<EdgeFilter> selectedEdgeFilter = new LinkedList<>(this.graphFactory.getGraph().getActiveEdgeFilter());
+		ObservableList<EdgeFilter> observedEdgeFilter = FXCollections.observableList(selectedEdgeFilter);
+		List<EdgeFilter> edgeBackup = new LinkedList<>(selectedEdgeFilter);
+
+    	FilterDialog fd = new FilterDialog(obsvervedVertexFilter, observedEdgeFilter);
+
+    	// On Apply and Layout apply the filters and relayout the graph.
+		final Button btnApplyAndLayout = (Button) fd.getDialogPane().lookupButton(FilterDialog.applyAndLayout);
+        btnApplyAndLayout.addEventFilter(ActionEvent.ACTION, event -> {
+            if (!(listEqualsNoOrder(vertexBackup, obsvervedVertexFilter) &&
+                    listEqualsNoOrder(edgeBackup, observedEdgeFilter))) {
+				applyAndLayout(obsvervedVertexFilter, observedEdgeFilter);
+			}
+			event.consume();
+        });
+
+		// On Apply and Layout only apply the filters.
+		final Button btnApply = (Button) fd.getDialogPane().lookupButton(ButtonType.APPLY);
+		btnApply.addEventFilter(ActionEvent.ACTION, event -> {
+			this.graphFactory.getGraph().setVertexFilter(obsvervedVertexFilter);
+			this.graphFactory.getGraph().setEdgeFilter(observedEdgeFilter);
+			reloadGraph();
+			event.consume();
+		});
+
+		// Disable apply button when earlier disabled filter are enabled.
+		observedEdgeFilter.addListener((ListChangeListener<EdgeFilter>) c ->
+            btnApply.setDisable(!(observedEdgeFilter.containsAll(lastEdgeFilter)
+					           && obsvervedVertexFilter.containsAll(lastVertexFilter))));
+
+		obsvervedVertexFilter.addListener((ListChangeListener<VertexFilter>) c ->
+			btnApply.setDisable(!(observedEdgeFilter.containsAll(lastEdgeFilter)
+					&& obsvervedVertexFilter.containsAll(lastVertexFilter))));
+
+		fd.showAndWait();
 	}
 
     private static <T> boolean listEqualsNoOrder(List<T> l1, List<T> l2) {
@@ -228,5 +264,19 @@ public class GraphView extends Pane {
 
         return s1.equals(s2);
     }
+
+    private void applyAndLayout(List<VertexFilter> vertexFilters, List<EdgeFilter> edgeFilters) {
+		// Only redraw if OK was pressed and if there was a change in the selection.
+		this.graphFactory.getGraph().setVertexFilter(vertexFilters);
+		this.graphFactory.getGraph().setEdgeFilter(edgeFilters);
+
+		lastVertexFilter.clear();
+		lastEdgeFilter.clear();
+		lastVertexFilter.addAll(vertexFilters);
+		lastEdgeFilter.addAll(edgeFilters);
+
+		this.layout.applyLayout();
+		reloadGraph();
+	}
 	
 }

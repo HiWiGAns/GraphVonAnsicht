@@ -27,6 +27,13 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+/**
+ * Manages group of one graph.
+ * It's lifetime matches the time a graph is hold by a GraphView.
+ * Can launch an interface to add a group and one to manage existing ones.
+ *
+ * @author Nicolas Boltz, Lucas Steinmann
+ */
 class GroupManager {
 
 	private final GraphViewGraphFactory factory;
@@ -130,6 +137,7 @@ class GroupManager {
 		dialog.setGraphic(null);
 		Stage stage = (Stage) dialog.getDialogPane().getScene().getWindow();
     	stage.getIcons().add(new Image("gans_icon.png"));
+
 
 		final Button btnApply = (Button) dialog.getDialogPane().lookupButton(ButtonType.APPLY);
         btnApply.addEventFilter(ActionEvent.ACTION, event -> {

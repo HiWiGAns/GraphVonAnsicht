@@ -8,15 +8,34 @@ import edu.kit.student.util.LanguageManager;
 import javafx.beans.value.ChangeListener;
 import javafx.geometry.Insets;
 import javafx.scene.Node;
-import javafx.scene.control.*;
+import javafx.scene.control.ButtonBar;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.CheckBox;
+import javafx.scene.control.Dialog;
+import javafx.scene.control.Tab;
+import javafx.scene.control.TabPane;
 import javafx.scene.image.Image;
-import javafx.scene.layout.*;
+import javafx.scene.layout.Border;
+import javafx.scene.layout.BorderStroke;
+import javafx.scene.layout.BorderStrokeStyle;
+import javafx.scene.layout.BorderWidths;
+import javafx.scene.layout.ColumnConstraints;
+import javafx.scene.layout.CornerRadii;
+import javafx.scene.layout.GridPane;
+import javafx.scene.layout.Pane;
+import javafx.scene.layout.Region;
+import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -33,6 +52,8 @@ public class FilterDialog extends Dialog<ButtonType> {
 
 
     private final Logger logger = LoggerFactory.getLogger(GraphViewSelectionModel.class);
+
+    public static final ButtonType applyAndLayout = new ButtonType("Apply and Layout", ButtonBar.ButtonData.APPLY);
 
     /**
      * Constructs a new dialog for selecting filter.
@@ -93,7 +114,9 @@ public class FilterDialog extends Dialog<ButtonType> {
 
 
         this.getDialogPane().setContent(tabPane);
-        this.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+
+
+        this.getDialogPane().getButtonTypes().addAll(ButtonType.APPLY, applyAndLayout, ButtonType.CLOSE);
         this.setTitle(LanguageManager.getInstance().get("wind_filter_title"));
         this.setHeaderText(null);
         this.setGraphic(null);
