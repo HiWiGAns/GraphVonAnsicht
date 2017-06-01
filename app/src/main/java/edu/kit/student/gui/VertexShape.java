@@ -2,9 +2,10 @@ package edu.kit.student.gui;
 
 import edu.kit.student.graphmodel.Vertex;
 import edu.kit.student.util.DoublePoint;
+import javafx.beans.property.ListProperty;
+import javafx.beans.property.SimpleListProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
-import javafx.collections.ObservableList;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Text;
@@ -18,14 +19,17 @@ import java.util.LinkedList;
  */
 public class VertexShape extends GAnsGraphElement {
 
-	private final ObservableList<Border> borderList = FXCollections.observableList(new LinkedList<>());
-	private static final int BORDER_WIDTH = 2;
+	public final ListProperty<Border> borderList = new SimpleListProperty<>(FXCollections.observableList(new LinkedList<>()));
 
 	private Rectangle rectangle;
 	private Text text;
 	private Color color;
+
+	private final static int BORDER_WIDTH = 2;
+
 	private final static double mindWidth = 20;
 	private final static double mindHeight = 5;
+
 
 	/**
 	 * Constructor

@@ -161,7 +161,6 @@ public class GraphViewSelectionController {
                             // Add all intersected elements to the selection
                             model.addAllVertices(vertexShapes);
                             model.addAllEdges(edgeShapes);
-                            System.out.println(menu.getItems().size());
                             menu.show(viewPanes.getRoot(), event.getScreenX(),event.getScreenY());
                         }
                     }

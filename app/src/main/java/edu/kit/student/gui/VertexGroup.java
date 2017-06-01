@@ -1,13 +1,11 @@
 package edu.kit.student.gui;
 
-import edu.kit.student.graphmodel.ViewableVertex;
 import edu.kit.student.util.IdGenerator;
 import javafx.scene.control.ColorPicker;
 import javafx.scene.control.Label;
 import javafx.scene.paint.Color;
 
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -19,25 +17,22 @@ import java.util.Set;
  */
 public class VertexGroup {
 	
-	private GraphViewGraphFactory factory;
-	
 	private Integer id;
 	private String name;
 	private Color currentColor = Color.WHITE;
-	private Set<ViewableVertex> vertices = new HashSet<>();
 	private HashMap<VertexShape, VertexShape.Border> shapeToBorder = new HashMap<>();
+
 	private Label label;
 	private ColorPicker picker;
 	
-	public VertexGroup(GraphViewGraphFactory factory, String name, Set<ViewableVertex> vertices) {
-		this.factory = factory;
+	public VertexGroup(String name, Set<VertexShape> vertexShapes) {
 		this.id = IdGenerator.getInstance().createId();
 		this.name = name;
 		this.label = new Label(name);
 		this.picker = new ColorPicker();
 //		picker.setOnAction(action -> setColor(picker.getValue()));
 		
-		addVertices(vertices);
+		addVertices(vertexShapes);
 	}
 	
 	public int getId() {
@@ -68,36 +63,45 @@ public class VertexGroup {
 		return this.picker;
 	}
 	
-	public void addVertices(Set<ViewableVertex> vertices) {
-		this.vertices.addAll(vertices);
+	public void addVertices(Set<VertexShape> vertices) {
 		// Only color new vertices
-		colorVertices(vertices);
+		showBorder(vertices);
 	}
 
 	/**
-	 * Removes the color form the vertices
+	 * Removes the border associated with this group from all vertices in this group.
 	 */
-	private void uncolorVertices() {
+	public void hideBorder() {
 		for(Map.Entry<VertexShape, VertexShape.Border> entry : shapeToBorder.entrySet()) {
             entry.getKey().removeBorder(entry.getValue());
 		}
-		shapeToBorder.clear();
-		this.currentColor = Color.WHITE;
-		updatePickerColor();
 	}
 
 	/**
-	 * Should be called to add the border to the specified vertices.
+	 * Adds a border with the color of this group to the specified vertices.
      * @param vertices the vertices to color
+	 * 				   should only contain vertices, which are in this group.
 	 */
-	private void colorVertices(Set<ViewableVertex> vertices) {
+	private void showBorder(Set<VertexShape> vertices) {
 		this.currentColor = picker.getValue();
-		for (ViewableVertex vertex : vertices) {
-			VertexShape shape = factory.getShapeFromVertex(vertex);
-			if(shape != null) {
-				shapeToBorder.put(shape, shape.addBorder(this.currentColor));
+		for (VertexShape shape : vertices) {
+			VertexShape.Border border = shapeToBorder.get(shape);
+			if (border == null) {
+				border = shape.addBorder(this.currentColor);
+				shapeToBorder.put(shape, border);
 			}
+			// Don't add the border twice.
+			else if (!shape.borderList.contains(border)) {
+                shape.addBorder(shapeToBorder.get(shape));
+            }
 		}
+	}
+
+	/**
+	 * Adds a border with the color of this group to all vertices in this group.
+	 */
+	public void showBorder() {
+		showBorder(shapeToBorder.keySet());
 	}
 
 	/**
@@ -105,8 +109,12 @@ public class VertexGroup {
 	 * This must if one want to remove the group.
 	 */
 	public void dissolve() {
-		uncolorVertices();
-		this.vertices.clear();
+		hideBorder();
+		shapeToBorder.clear();
+	}
+
+	public Set<VertexShape> getVertices() {
+		return this.shapeToBorder.keySet();
 	}
 	
 	private void updatePickerColor() {

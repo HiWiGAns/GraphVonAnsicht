@@ -25,6 +25,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * A view used for showing and creating a graph in GAns. It supports zooming and
@@ -73,7 +74,7 @@ public class GraphView extends Pane {
 		//		 to hold one graph or can be reused. If it should not be reused, the graph
 		//		 could be set in the constructor.
 		graphFactory = new GraphViewGraphFactory(graph);
-		groupManager = new GroupManager(graphFactory);
+		groupManager = new GroupManager();
 
 		lastEdgeFilter.addAll(graphFactory.getGraph().getActiveEdgeFilter());
 		lastVertexFilter.addAll(graphFactory.getGraph().getActiveVertexFilter());
@@ -200,7 +201,7 @@ public class GraphView extends Pane {
 		MenuItem group = new MenuItem(LanguageManager.getInstance().get("ctx_group"));
 		group.setOnAction(e ->
 		{
-			if(groupManager.openAddGroupDialog(vertices)) {
+			if(groupManager.openAddGroupDialog(vertices.stream().map(graphFactory::getShapeFromVertex).collect(Collectors.toSet()))) {
 				openGroupDialog();
 				selectionModel.clear();
 			}

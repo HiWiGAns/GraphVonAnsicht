@@ -1,6 +1,5 @@
 package edu.kit.student.gui;
 
-import edu.kit.student.graphmodel.ViewableVertex;
 import edu.kit.student.util.LanguageManager;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -36,8 +35,6 @@ import java.util.Set;
  */
 class GroupManager {
 
-	private final GraphViewGraphFactory factory;
-
     private final ObservableList<VertexGroup> groups;
 
     // Stores the ordering of the groups, at the time the dialog was started.
@@ -51,14 +48,13 @@ class GroupManager {
 	// If the changes are applied, this map is cleared.
 	private final Map<VertexGroup, Color> groupColorBackup;
 
-	GroupManager(GraphViewGraphFactory factory) {
-		this.factory = factory;
+	GroupManager() {
 		groups = FXCollections.observableArrayList();
 		groupColorBackup = new HashMap<>();
 		groupBackup = new ArrayList<>();
 	}
 	
-	boolean openAddGroupDialog(Set<ViewableVertex> vertices) {
+	boolean openAddGroupDialog(Set<VertexShape> vertices) {
 		TextInputDialog dialog = new TextInputDialog(LanguageManager.getInstance().get("wind_group_new_default"));
     	dialog.setTitle(LanguageManager.getInstance().get("wind_group_new_title"));
     	dialog.setHeaderText(null);
@@ -68,8 +64,7 @@ class GroupManager {
     	stage.getIcons().add(new Image("gans_icon.png"));
     	Optional<String> result = dialog.showAndWait();
     	if (result.isPresent()){
-    		VertexGroup group = new VertexGroup(factory, result.get(), vertices);
-    		groups.add(group);
+    		groups.add(new VertexGroup(result.get(), vertices));
     		return true;
     	}
     	return false;
@@ -177,7 +172,9 @@ class GroupManager {
 			else
 				group.dissolve();
 		}
-	}
+		groups.forEach(VertexGroup::hideBorder);
+        groups.forEach(VertexGroup::showBorder);
+    }
 
 	private class GroupListCell extends ListCell<VertexGroup> {
 
