@@ -1,11 +1,5 @@
 package edu.kit.student.gui;
 
-import java.text.DecimalFormat;
-import java.text.ParseException;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Optional;
-
 import edu.kit.student.parameter.BooleanParameter;
 import edu.kit.student.parameter.DoubleParameter;
 import edu.kit.student.parameter.IntegerParameter;
@@ -17,6 +11,7 @@ import edu.kit.student.parameter.StringParameter;
 import edu.kit.student.util.LanguageManager;
 import javafx.geometry.Insets;
 import javafx.scene.control.Alert;
+import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
@@ -25,14 +20,20 @@ import javafx.scene.control.ListView;
 import javafx.scene.control.Spinner;
 import javafx.scene.control.SpinnerValueFactory;
 import javafx.scene.control.TextField;
-import javafx.scene.control.Alert.AlertType;
 import javafx.scene.image.Image;
 import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
+import javafx.stage.Window;
 import javafx.util.Callback;
 import javafx.util.StringConverter;
+
+import java.text.DecimalFormat;
+import java.text.ParseException;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Optional;
 
 /**
  * Generates a parameter dialog given a parent node and a set of parameters.
@@ -164,7 +165,7 @@ public class ParameterDialogGenerator extends ParameterVisitor {
 	 *            The settings for which the dialog will be created.
 	 * @return true: Dialog was accepted, false: Dialog was aborted.
 	 */
-	public static boolean showDialog(Settings settings) {
+	public static boolean showDialog(Window owner, Settings settings) {
 		if (settings.size() == 0) {
 			// if there are no settings to be shown the dialog will
 			// automatically be accepted
@@ -179,6 +180,7 @@ public class ParameterDialogGenerator extends ParameterVisitor {
 			root.getColumnConstraints().add(c2);
 			ParameterDialogGenerator gen = new ParameterDialogGenerator(root, settings);
 			Alert dialog = new Alert(AlertType.CONFIRMATION);
+			dialog.initOwner(owner);
 			dialog.setTitle(LanguageManager.getInstance().get("wind_prop_title"));
 			dialog.setHeaderText(null);
 			dialog.setGraphic(null);

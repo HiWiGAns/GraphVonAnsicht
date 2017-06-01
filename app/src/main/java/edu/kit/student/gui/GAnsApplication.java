@@ -438,7 +438,7 @@ public class GAnsApplication {
 		Optional<String> result = dialog.showAndWait();
 		if (result.isPresent()) {
 		    WorkspaceOption chosenOption = options.get(workspaceNames.indexOf(result.get()));
-		    if(ParameterDialogGenerator.showDialog(chosenOption.getSettings())) {
+		    if(ParameterDialogGenerator.showDialog(primaryStage.getScene().getWindow(), chosenOption.getSettings())) {
 		    	workspace = chosenOption.getInstance();
 			    return true;
 		    }
@@ -471,7 +471,7 @@ public class GAnsApplication {
 	
 	private void openLayoutSettingsDialog(LayoutOption option) {
 		Settings settings = option.getSettings();
-	    if(ParameterDialogGenerator.showDialog(settings)) {
+	    if(ParameterDialogGenerator.showDialog(primaryStage.getScene().getWindow(), settings)) {
 	    	currentGraphView.setCurrentLayoutOption(option);
 	    	option.applyLayout();
 	    }

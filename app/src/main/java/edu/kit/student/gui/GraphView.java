@@ -201,7 +201,8 @@ public class GraphView extends Pane {
 		MenuItem group = new MenuItem(LanguageManager.getInstance().get("ctx_group"));
 		group.setOnAction(e ->
 		{
-			if(groupManager.openAddGroupDialog(vertices.stream().map(graphFactory::getShapeFromVertex).collect(Collectors.toSet()))) {
+			if(groupManager.openAddGroupDialog(vertices.stream().map(graphFactory::getShapeFromVertex).collect(Collectors.toSet()),
+                                               this.getScene().getWindow())) {
 				openGroupDialog();
 				selectionModel.clear();
 			}
@@ -213,7 +214,7 @@ public class GraphView extends Pane {
 
 
 	public void openGroupDialog() {
-		groupManager.openGroupDialog();
+		groupManager.openGroupDialog(this.getScene().getWindow());
 	}
 	
 	public void openFilterDialog() {
@@ -227,6 +228,7 @@ public class GraphView extends Pane {
 		List<EdgeFilter> edgeBackup = new LinkedList<>(selectedEdgeFilter);
 
     	FilterDialog fd = new FilterDialog(obsvervedVertexFilter, observedEdgeFilter);
+		fd.initOwner(this.getScene().getWindow());
 
     	// On Apply and Layout apply the filters and relayout the graph.
 		final Button btnApplyAndLayout = (Button) fd.getDialogPane().lookupButton(FilterDialog.applyAndLayout);

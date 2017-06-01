@@ -18,6 +18,7 @@ import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
+import javafx.stage.Window;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -54,8 +55,9 @@ class GroupManager {
 		groupBackup = new ArrayList<>();
 	}
 	
-	boolean openAddGroupDialog(Set<VertexShape> vertices) {
+	boolean openAddGroupDialog(Set<VertexShape> vertices, Window owner) {
 		TextInputDialog dialog = new TextInputDialog(LanguageManager.getInstance().get("wind_group_new_default"));
+        dialog.initOwner(owner);
     	dialog.setTitle(LanguageManager.getInstance().get("wind_group_new_title"));
     	dialog.setHeaderText(null);
     	dialog.setGraphic(null);
@@ -70,7 +72,7 @@ class GroupManager {
     	return false;
     }
 
-	void openGroupDialog() {
+	void openGroupDialog(Window owner) {
 		backup();
 
 		Dialog<ButtonType> dialog = new Dialog<>();
@@ -124,7 +126,8 @@ class GroupManager {
 		HBox buttonBox = new HBox(upButton, downButton, removeButton);
 		buttonBox.setSpacing(3);
 		VBox root = new VBox(groupList, buttonBox);
-		
+
+        dialog.initOwner(owner);
 		dialog.getDialogPane().setContent(root);
 		dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CLOSE, ButtonType.APPLY);
 		dialog.setTitle(LanguageManager.getInstance().get("wind_group_title"));
