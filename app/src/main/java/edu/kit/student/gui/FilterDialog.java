@@ -7,6 +7,7 @@ import edu.kit.student.plugin.VertexFilter;
 import edu.kit.student.util.LanguageManager;
 import javafx.beans.value.ChangeListener;
 import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.ButtonBar;
 import javafx.scene.control.ButtonType;
@@ -20,12 +21,11 @@ import javafx.scene.layout.Border;
 import javafx.scene.layout.BorderStroke;
 import javafx.scene.layout.BorderStrokeStyle;
 import javafx.scene.layout.BorderWidths;
-import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.CornerRadii;
-import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
+import javafx.scene.layout.TilePane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
@@ -95,8 +95,8 @@ public class FilterDialog extends Dialog<ButtonType> {
 
 
         // Fill with groups of checkboxes
-        Pane vertexCheckboxes = createCheckboxSetPane(vertexFilterCheckboxes, Filter::getGroup, 6);
-        Pane edgeCheckboxes = createCheckboxSetPane(edgeFilterCheckboxes, Filter::getGroup, 6);
+        Pane vertexCheckboxes = createCheckboxSetPane(vertexFilterCheckboxes, Filter::getGroup);
+        Pane edgeCheckboxes = createCheckboxSetPane(edgeFilterCheckboxes, Filter::getGroup);
 
 
         new FilterGroup(checkAllVertex, vertexFilterCheckboxes);
@@ -126,15 +126,17 @@ public class FilterDialog extends Dialog<ButtonType> {
         this.setTitle(LanguageManager.getInstance().get("wind_filter_title"));
         this.setHeaderText(null);
         this.setGraphic(null);
+        this.setResizable(true);
         this.setWidth(500);
         this.setHeight(500);
         Stage stage = (Stage) this.getDialogPane().getScene().getWindow();
+        stage.setMinHeight(400);
+        stage.setMinWidth(500);
         stage.getIcons().add(new Image("gans_icon.png"));
     }
 
     private Pane createCheckboxSetPane(List<FilterCheckBox> checkBoxes,
-                                       Function<Filter, String> groupMap,
-                                       int columnCount) {
+                                       Function<Filter, String> groupMap) {
         VBox pane = new VBox(10);
         pane.setPadding(new Insets(20,0,0,0));
         // Group items after the specified group mapping
@@ -144,15 +146,15 @@ public class FilterDialog extends Dialog<ButtonType> {
 
         // For every group create one checkbox group
         for (String group : groupAll.keySet()) {
-            pane.getChildren().add(createCheckboxGroup(groupAll.get(group), group, columnCount));
+            pane.getChildren().add(createCheckboxGroup(groupAll.get(group), group));
         }
         return pane;
     }
 
     private Node createCheckboxGroup(List<FilterCheckBox> filters,
-                                     String groupName, int columnCount) {
+                                     String groupName) {
 
-        GridPane gridPane = new GridPane();
+        TilePane tilePane = new TilePane();
 
         // Create group box which toggles all boxes inside the group
         final CheckBox groupCheckBox = new CheckBox(groupName);
@@ -160,31 +162,17 @@ public class FilterDialog extends Dialog<ButtonType> {
 
         FilterGroup filterGroup = new FilterGroup(groupCheckBox, new HashSet<>());
 
-
-        int column = 0;
-        int row = 0;
-        gridPane.setHgap(10);
-        gridPane.setVgap(10);
-        gridPane.setPadding(new Insets(10, 10, 10, 10));
-
-        // Create equally spaced columns
-        for (int i = 0; i < columnCount; i++) {
-            ColumnConstraints constraint = new ColumnConstraints();
-            constraint.setPercentWidth(100.0/columnCount);
-            gridPane.getColumnConstraints().add(constraint);
-        }
+        tilePane.setHgap(10);
+        tilePane.setVgap(10);
+        tilePane.setPadding(new Insets(10, 10, 10, 10));
+        tilePane.setTileAlignment(Pos.BASELINE_LEFT);
 
         for(FilterCheckBox box : filters) {
-            if(column == columnCount) {
-                column = 0;
-                row++;
-            }
             filterGroup.add(box);
-            gridPane.add(box, column, row);
-            column++;
+            tilePane.getChildren().add(box);
         }
 
-        return createBorderedGroup(gridPane, groupCheckBox);
+        return createBorderedGroup(tilePane, groupCheckBox);
     }
 
     private Pane createBorderedGroup(Node content, Region inTitle) {
