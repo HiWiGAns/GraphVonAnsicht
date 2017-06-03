@@ -87,6 +87,8 @@ public interface Vertex {
 	public void setLeftRightMargin(IntegerPoint newMargin);
 	
 	public IntegerPoint getLeftRightMargin();
+
+	public IntegerPoint getDefaultLeftRightMargin();
 	
 	public Color getColor();
 }

@@ -953,8 +953,13 @@ public class MethodGraphLayout implements LayoutAlgorithm<MethodGraph> {
 		
 		@Override
 		public IntegerPoint getLeftRightMargin() {
-			return new IntegerPoint(2,2);
+			return getDefaultLeftRightMargin();
 		}
+
+        @Override
+        public IntegerPoint getDefaultLeftRightMargin(){
+            return new IntegerPoint(2,2);
+        }
 		
 		@Override
 		public void setLeftRightMargin(IntegerPoint newMargin) {

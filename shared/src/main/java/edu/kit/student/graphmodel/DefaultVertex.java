@@ -127,13 +127,18 @@ public class DefaultVertex implements ViewableVertex {
 		if(this.leftRightMargin != null){
 			return this.leftRightMargin;
 		}else{
-			return new IntegerPoint(2,2);
+			return getDefaultLeftRightMargin();
 		}
 	}
 	
 	@Override
 	public void setLeftRightMargin(IntegerPoint newMargin) {
 		this.leftRightMargin = newMargin;
+	}
+
+	@Override
+	public IntegerPoint getDefaultLeftRightMargin(){
+		return new IntegerPoint(2,2);
 	}
 
 	@Override

@@ -10,6 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -200,13 +201,17 @@ public class VertexPositioner implements IVertexPositioner {
 
 		for (Vertex vertex : graph.getVertexSet()) {
 			//logger.debug(vertex.getSize().toString());
-			horizontalWidth[(int)vertex.getX()] = Math.max(horizontalWidth[(int)vertex.getX()], (int)Math.round(vertex.getSize().x));
-			verticalHeight[(int)vertex.getY()] = Math.max(verticalHeight[(int)vertex.getY()], (int)Math.round(vertex.getSize().y));
+			horizontalWidth[(int)vertex.getX()] = Math.max(horizontalWidth[(int)vertex.getX()], (int)Math.ceil(vertex.getSize().x));
+			verticalHeight[(int)vertex.getY()] = Math.max(verticalHeight[(int)vertex.getY()], (int)Math.ceil(vertex.getSize().y));
 			//TODO: as getX/Y returns a double this might not be the best solution
 		}
 
-		horizontalOffset[0] = (int) Math.ceil(graph.getLayer(0).get(0).getLeftRightMargin().x);//normally the left margins of every vertex are the same
-		//TODO: maybe search in all layers for the biggest left margin in the first vertex of each layer to set as horizontalOffset[0]
+
+		Set<ISugiyamaVertex> firstVertexOfLayer = graph.getLayers().stream().map(l->l.get(0)).collect(Collectors.toSet());
+		int maxLeftMargin = firstVertexOfLayer.stream().mapToInt(v->v.getLeftRightMargin().x).max().getAsInt();
+		horizontalOffset[0] = maxLeftMargin;
+		System.out.println("Max leftMargin: " + maxLeftMargin);
+
 		verticalOffset[0] = 0;
 
 		for (int i = 1; i < horizontalWidth.length; i++) {
@@ -221,8 +226,20 @@ public class VertexPositioner implements IVertexPositioner {
 			vertex.setX(horizontalOffset[(int)vertex.getX()]);
 			vertex.setY(verticalOffset[(int)vertex.getY()]);
 		}
+		printPositions(graph.getLayers());
 		//adjust left and right margins of all vertices in the graph
 		this.adjustLeftAndRightMargin(graph.getLayers());
+	}
+
+	private void printPositions(List<List<ISugiyamaVertex>> layers){
+		for(int i = 0; i < layers.size(); i++){
+			List<ISugiyamaVertex> layer = layers.get(i);
+			StringBuilder out = new StringBuilder("Layer " + i + ": ");
+			for(ISugiyamaVertex v : layer){
+				out.append("(").append(v.getX()).append("|").append(v.getY()).append("); ");
+			}
+			System.out.println(out);
+		}
 	}
 
 
@@ -381,7 +398,7 @@ public class VertexPositioner implements IVertexPositioner {
 			//first move the first vertex more right if he is very left (x-coord 0)
 			ISugiyamaVertex fst = layer.get(0);
 			if(fst.getX() < fst.getLeftRightMargin().x){
-				fst.setX(fst.getX() + (fst.getLeftRightMargin().x - fst.getX()));
+				fst.setX(fst.getLeftRightMargin().x);
 			}
 			for(int i = 1; i < layer.size(); i++){
 				//adjust here left and right margins

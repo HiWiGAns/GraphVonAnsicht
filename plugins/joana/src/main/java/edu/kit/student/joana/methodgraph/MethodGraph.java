@@ -197,15 +197,15 @@ public class MethodGraph extends JoanaGraph {
      * 
      * @param idToIEs The given map of vertex id to the set of interprocedural edges that are connected with it.
      */
-    void calcLeftRightMarginNew(Map<Integer,Set<InterproceduralEdge>> idToIEs){
+    void calcLeftRightMarginNew(Map<Integer, Set<InterproceduralEdge>> idToIEs){
         for(int normalVertexId : idToIEs.keySet()){
             Set<InterproceduralEdge> ieSet = idToIEs.get(normalVertexId);
             if(ieSet.isEmpty()) continue;
             JoanaVertex normalVertex = ieSet.iterator().next().getNormalVertex();
             Set<InterproceduralEdge> sourceIEs = ieSet.stream().filter(ie->ie.getDummyLocation() == InterproceduralEdge.DummyLocation.SOURCE).collect(Collectors.toSet());
             Set<InterproceduralEdge> targetIEs = ieSet.stream().filter(ie->ie.getDummyLocation() == InterproceduralEdge.DummyLocation.TARGET).collect(Collectors.toSet());
-            int newLeftMargin = normalVertex.getLeftRightMargin().x;
-            int newRightMargin = normalVertex.getLeftRightMargin().y;
+            int newLeftMargin = normalVertex.getDefaultLeftRightMargin().x;
+            int newRightMargin = normalVertex.getDefaultLeftRightMargin().y;
             for(InterproceduralEdge ie : sourceIEs){ //increase new left margin
                 assert(Objects.equals(ie.getNormalVertex().getID(), normalVertexId)); //every vertex in this set should have the same normal vertex
                 InterproceduralEdge.ForeignGraphDummyVertex dummyVertex = ie.getDummyVertex();
@@ -217,7 +217,7 @@ public class MethodGraph extends JoanaGraph {
                 newRightMargin += dummyVertex.getLeftRightMargin().x + dummyVertex.getSize().x + dummyVertex.getLeftRightMargin().y;
             }
             //TODO: maybe add ~5 to each newLeftMargin and newRightMargin in order to have a bit more space to nearby vertices
-            normalVertex.setLeftRightMargin(new IntegerPoint(newLeftMargin,newRightMargin));
+            normalVertex.setLeftRightMargin(new IntegerPoint(newLeftMargin, newRightMargin));
         }
     }
     

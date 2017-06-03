@@ -752,8 +752,13 @@ public class SugiyamaGraph
 
 		@Override
 		public IntegerPoint getLeftRightMargin() {
-			return new IntegerPoint(2,2);
+			return getDefaultLeftRightMargin();
 		}
+
+		@Override
+        public IntegerPoint getDefaultLeftRightMargin(){
+            return new IntegerPoint(2,2);
+        }
 
 		@Override
 		public Color getColor() {
@@ -920,6 +925,11 @@ public class SugiyamaGraph
 		public IntegerPoint getLeftRightMargin() {
 			return this.vertex.getLeftRightMargin();
 		}
+
+        @Override
+        public IntegerPoint getDefaultLeftRightMargin(){
+            return this.vertex.getDefaultLeftRightMargin();
+        }
 
 		@Override
 		public Color getColor() {
