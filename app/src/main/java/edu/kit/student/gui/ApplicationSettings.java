@@ -57,9 +57,17 @@ public class ApplicationSettings {
 	}
 	
 	public double getPropertyAsDouble(String key) {
-		return Double.parseDouble(properties.getProperty(key, "0.0"));
+	    return getPropertyAsDouble(key, 0.0);
 	}
-	
+
+	public double getPropertyAsDouble(String key, double defaultValue) {
+		try {
+			return Double.parseDouble(properties.getProperty(key));
+		} catch (NumberFormatException e) {
+			return defaultValue;
+		}
+	}
+
 	public void setProperty(String key, String value) {
 		properties.setProperty(key, value);
 	}
