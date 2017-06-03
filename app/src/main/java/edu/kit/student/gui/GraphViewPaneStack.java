@@ -4,17 +4,25 @@ import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.ReadOnlyDoubleProperty;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.event.EventHandler;
+import javafx.fxml.FXMLLoader;
 import javafx.geometry.Point2D;
 import javafx.scene.Group;
+import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
+import javafx.scene.control.ToolBar;
+import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.Pane;
-import javafx.scene.shape.Circle;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
 
 import static com.sun.javafx.util.Utils.clamp;
 
@@ -51,6 +59,10 @@ public class GraphViewPaneStack {
     private final AnchorPane wrapper;
     private final GraphView graphView;
 
+    private ToolBar searchBar;
+
+    private final VBox vBox;
+
     private final DoubleProperty scaleProperty = new SimpleDoubleProperty(1.0d);
     // Captures the last scroll direction and length
 	private final DoubleProperty deltaY = new SimpleDoubleProperty(0.0d);
@@ -72,6 +84,7 @@ public class GraphViewPaneStack {
         scrollPane.setPannable(false);
 		scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
 		scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+
 		AnchorPane.setTopAnchor(scrollPane, 10.0d);
 		AnchorPane.setRightAnchor(scrollPane, 10.0d);
 		AnchorPane.setBottomAnchor(scrollPane, 10.0d);
@@ -91,9 +104,32 @@ public class GraphViewPaneStack {
 		scrollPane.setContent(panAndZoomPane);
 		panAndZoomPane.toBack();
 
-        wrapper = new AnchorPane();
+		vBox = new VBox();
+		vBox.setFocusTraversable(true);
+		vBox.addEventFilter(MouseEvent.MOUSE_PRESSED, e -> vBox.requestFocus());
+
+		try {
+			FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/searchbar.fxml"));
+			searchBar = loader.load();
+			SearchBarController controller = loader.getController();
+			vBox.setOnKeyPressed(event -> {
+				if (event.isControlDown() && event.getCode().equals(KeyCode.F))
+                    controller.switchActive();
+			});
+
+		} catch (IOException e) {
+			Label errLabel = new Label("Could not load search bar. Cause: " + e.getCause());
+            errLabel.setTextFill(Color.web("#FF0000"));
+            searchBar = new ToolBar(errLabel);
+		}
+
+		wrapper = new AnchorPane();
         wrapper.setFocusTraversable(false);
         wrapper.getChildren().addAll(scrollPane);
+
+        vBox.getChildren().addAll(searchBar, wrapper);
+        VBox.setVgrow(wrapper, Priority.ALWAYS);
+
 
 		scrollPane.addEventFilter(MouseEvent.MOUSE_PRESSED, sceneGestures.getOnMouseClickedEventHandler());
 		scrollPane.addEventFilter(MouseEvent.MOUSE_PRESSED, sceneGestures.getOnMousePressedEventHandler());
@@ -143,8 +179,12 @@ public class GraphViewPaneStack {
      * @return the root pane of this stack of panes.
      */
 	Pane getRoot() {
-        return wrapper;
+        return vBox;
     }
+
+    Pane getUIPane() {
+	    return wrapper;
+	}
 
 	/**
 	 * Moves the graph to center the specified point.
@@ -159,6 +199,7 @@ public class GraphViewPaneStack {
 		graphView.setTranslateX(graphView.getTranslateX() + delta.getX());
 		graphView.setTranslateY(graphView.getTranslateY() + delta.getY());
 	}
+
 
 	private class PanAndZoomPane extends Pane {
 

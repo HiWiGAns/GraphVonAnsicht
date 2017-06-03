@@ -419,6 +419,7 @@ public class GAnsApplication {
 
 		GraphViewTab tab = new GraphViewTab(graphViewPaneStack);
 		graphViewTabPane.getTabs().add(tab);
+		graphViewPaneStack.getRoot().requestFocus();
 		graphViewTabPane.getSelectionModel().select(tab);
 
 	}

@@ -97,9 +97,9 @@ public class GraphViewSelectionController {
             // Hide menu when zooming (looks weird when it is drawn while graph is scaled)
             viewPanes.getScaleProperty().addListener((ob, n, o) -> menu.hide());
 
-            viewPanes.getRoot().addEventHandler(MouseEvent.MOUSE_PRESSED, onMousePressedEventHandler);
-            viewPanes.getRoot().addEventFilter(MouseEvent.MOUSE_DRAGGED, onMouseDraggedEventHandler);
-            viewPanes.getRoot().addEventHandler(MouseEvent.MOUSE_RELEASED, onMouseReleasedEventHandler);
+            viewPanes.getUIPane().addEventHandler(MouseEvent.MOUSE_PRESSED, onMousePressedEventHandler);
+            viewPanes.getUIPane().addEventFilter(MouseEvent.MOUSE_DRAGGED, onMouseDraggedEventHandler);
+            viewPanes.getUIPane().addEventHandler(MouseEvent.MOUSE_RELEASED, onMouseReleasedEventHandler);
         }
 
         void setContextMenu(ContextMenu menu) {
@@ -108,11 +108,11 @@ public class GraphViewSelectionController {
 
 
         private void showRect() {
-            viewPanes.getRoot().getChildren().add(rect);
+            viewPanes.getUIPane().getChildren().add(rect);
         }
 
         private void hideRect() {
-            viewPanes.getRoot().getChildren().remove(rect);
+            viewPanes.getUIPane().getChildren().remove(rect);
         }
 
         EventHandler<MouseEvent> onMousePressedEventHandler = new EventHandler<MouseEvent>() {
@@ -161,7 +161,7 @@ public class GraphViewSelectionController {
                             // Add all intersected elements to the selection
                             model.addAllVertices(vertexShapes);
                             model.addAllEdges(edgeShapes);
-                            menu.show(viewPanes.getRoot(), event.getScreenX(),event.getScreenY());
+                            menu.show(viewPanes.getUIPane(), event.getScreenX(),event.getScreenY());
                         }
                     }
                 }
@@ -307,7 +307,7 @@ public class GraphViewSelectionController {
             double mouseAnchorX;
             double mouseAnchorY;
 
-            //Anchor for the translate position of the view
+            //Anchor for the translate position of the fxml
             double translateAnchorX;
             double translateAnchorY;
 

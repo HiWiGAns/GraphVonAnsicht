@@ -26,20 +26,20 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * A view used for showing and creating a graph in GAns. It supports zooming and
+ * A fxml used for showing and creating a graph in GAns. It supports zooming and
  * other general navigation features.
  * 
  * @author Nicolas
  */
 public class GraphView extends Pane {
 
-	private GraphViewSelectionModel selectionModel;
+	private final GraphViewSelectionModel selectionModel;
 	private GraphViewGraphFactory graphFactory;
 	private LayoutOption layout;
 	private FilterModel model = new FilterModel();
 
-	private ContextMenu contextMenu;
-    private List<MenuItem> dynamicMenuListItems = new LinkedList<>();
+	private final ContextMenu contextMenu = new ContextMenu();
+    private final List<MenuItem> dynamicMenuListItems = new LinkedList<>();
     
 	private GroupManager groupManager;
 	
@@ -58,7 +58,6 @@ public class GraphView extends Pane {
 	 */
 	public GraphView(GAnsMediator mediator, GraphViewSelectionModel selectionModel) {
 		this.mediator = mediator;
-		this.contextMenu = new ContextMenu();
 		this.selectionModel = selectionModel;
 		selectionModel.getSelectedShapes().addListener(onSelectionChanged);
 	}
@@ -68,7 +67,7 @@ public class GraphView extends Pane {
 	 * shown.
 	 * 
 	 * @param graph
-	 *            The graph to be visualized in the view.
+	 *            The graph to be visualized in the fxml.
 	 */
 	public void setGraph(ViewableGraph graph) {
 	    // TODO: When analyzing usages of setGraph, it shows that a graph is only set after
@@ -101,7 +100,7 @@ public class GraphView extends Pane {
 	}
 
 	/**
-	 * Returns the current {@link GraphViewGraphFactory} from the view.
+	 * Returns the current {@link GraphViewGraphFactory} from the fxml.
 	 * 
 	 * @return The current {@link GraphViewGraphFactory}.
 	 */

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.control.ToolBar?>
+<ToolBar fx:id="searchBar"
+         xmlns="http://javafx.com/javafx"
+         xmlns:fx="http://javafx.com/fxml"
+         fx:controller="edu.kit.student.gui.SearchBarController">
+    <Button fx:id="btnCloseSearch" mnemonicParsing="false" styleClass="buttonSearchClose">
+    </Button>
+    <TextField fx:id="txtSearch" styleClass="searchField">
+    </TextField>
+    <Button fx:id="btnSearchUp" mnemonicParsing="false" styleClass="buttonSearchUp">
+    </Button>
+    <Button fx:id="btnSearchDown" mnemonicParsing="false" styleClass="buttonSearchDown">
+    </Button>
+</ToolBar>
+
