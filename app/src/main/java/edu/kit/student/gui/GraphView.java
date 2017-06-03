@@ -79,6 +79,11 @@ public class GraphView extends Pane {
 		lastEdgeFilter.addAll(graphFactory.getGraph().getActiveEdgeFilter());
 		lastVertexFilter.addAll(graphFactory.getGraph().getActiveVertexFilter());
 
+		lastVertexFilter.clear();
+		lastVertexFilter.addAll(graph.getActiveVertexFilter());
+		lastEdgeFilter.clear();
+		lastEdgeFilter.addAll(graph.getActiveEdgeFilter());
+
 		getChildren().addAll(graphFactory.getGraphicalElements());
 	}
 	
@@ -117,7 +122,6 @@ public class GraphView extends Pane {
 	public ContextMenu getContextMenu() {
 		return contextMenu;
 	}
-
 
 	public void setCurrentLayoutOption(LayoutOption layout) {
 		this.layout = layout;
@@ -191,8 +195,7 @@ public class GraphView extends Pane {
 			selectionModel.clear();
 			action.handle();
 			getCurrentLayoutOption().chooseLayout();
-			getCurrentLayoutOption().applyLayout();
-			reloadGraph();
+			layoutGraph();
 		});
 		return item;
 	}
@@ -278,8 +281,11 @@ public class GraphView extends Pane {
 		lastVertexFilter.addAll(vertexFilters);
 		lastEdgeFilter.addAll(edgeFilters);
 
+		layoutGraph();
+	}
+
+	private void layoutGraph() {
 		this.layout.applyLayout();
 		reloadGraph();
 	}
-	
 }
