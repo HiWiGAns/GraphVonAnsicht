@@ -210,7 +210,6 @@ public class VertexPositioner implements IVertexPositioner {
 		Set<ISugiyamaVertex> firstVertexOfLayer = graph.getLayers().stream().map(l->l.get(0)).collect(Collectors.toSet());
 		int maxLeftMargin = firstVertexOfLayer.stream().mapToInt(v->v.getLeftRightMargin().x).max().getAsInt();
 		horizontalOffset[0] = maxLeftMargin;
-		System.out.println("Max leftMargin: " + maxLeftMargin);
 
 		verticalOffset[0] = 0;
 
@@ -226,12 +225,12 @@ public class VertexPositioner implements IVertexPositioner {
 			vertex.setX(horizontalOffset[(int)vertex.getX()]);
 			vertex.setY(verticalOffset[(int)vertex.getY()]);
 		}
-		printPositions(graph.getLayers());
+		//printPositions(graph.getLayers());
 		//adjust left and right margins of all vertices in the graph
 		this.adjustLeftAndRightMargin(graph.getLayers());
 	}
 
-	private void printPositions(List<List<ISugiyamaVertex>> layers){
+	/*private void printPositions(List<List<ISugiyamaVertex>> layers){
 		for(int i = 0; i < layers.size(); i++){
 			List<ISugiyamaVertex> layer = layers.get(i);
 			StringBuilder out = new StringBuilder("Layer " + i + ": ");
@@ -240,7 +239,7 @@ public class VertexPositioner implements IVertexPositioner {
 			}
 			System.out.println(out);
 		}
-	}
+	}*/
 
 
 	@Override
