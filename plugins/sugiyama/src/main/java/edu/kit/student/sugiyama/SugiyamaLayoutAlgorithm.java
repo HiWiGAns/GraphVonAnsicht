@@ -184,6 +184,7 @@ public class SugiyamaLayoutAlgorithm<G extends DirectedGraph>
 	 * Exports the state of the last layouted {@link SugiyamaGraph} as a {@link LayoutedGraph}.
 	 *
 	 * @return the LayoutedGraph that represents the state of a SugiyamaGraph
+	 * 		or null, if no layout has been applied yet
 	 */
 	public LayoutedGraph exportLayoutedGraph(){
 		SugiyamaGraph sg = this.sugyGraph;

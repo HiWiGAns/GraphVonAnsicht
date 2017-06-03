@@ -94,8 +94,8 @@ public class SugiyamaGraph
 	 *                (only used in case of a FieldAccess where on the top and bottom dummies simulating incoming and outgoing points at the FieldAccess)<p>
 	 *
 	 *
-	 * @param vertices vertices to be contained in this SugiyamaGraph
-	 * @param edges edges to be contained in this SugiyamaGraph
+	 * @param vertices vertices to be contained in this SugiyamaGraph. Should not contain other dummies
+	 * @param edges edges to be contained in this SugiyamaGraph. Should not contain supplement edges. Should not conatin the edge replaced by a path.
 	 * @param paths Optional, can be empty or null. The paths replace a certain edge which is then not contained in the edgeset.
 	 *
 	 */
@@ -161,6 +161,8 @@ public class SugiyamaGraph
 		//created dummies, supplementEdges and supplementPaths are added to the graph in the method which creates them
 		this.graph = new DefaultDirectedGraph<>(sugyVertices, sugyEdges);
 
+		if(paths == null)
+			return;
 		//now iterate over all paths and construct the correct SupplementPath, also construct:
 		//replaced edge -> sugy edge TODO: are both of it's vertices assigned to a layer yet ? In case if there is just a path between 2 vertices and no other edge -> vertices not in normal set
 		for(DirectedSupplementEdgePath p : paths){//add dummies and supp edges and watch out for direction!
@@ -265,8 +267,8 @@ public class SugiyamaGraph
 	 *
 	 * @return a set of {@link DefaultDirectedSupplementEdgePath} describing the supplement paths of this SugiyamaGraph
 	 */
-	public Set<DefaultDirectedSupplementEdgePath> exportPaths(){
-		Set<DefaultDirectedSupplementEdgePath> paths = new HashSet<>();
+	public Set<DirectedSupplementEdgePath> exportPaths(){
+		Set<DirectedSupplementEdgePath> paths = new HashSet<>();
 		for(SupplementPath p : this.getSupplementPaths()){
 			List<Vertex> dummies = new LinkedList<>();
 			List<DirectedEdge> suppEdges = new LinkedList<>();

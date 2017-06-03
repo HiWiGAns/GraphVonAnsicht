@@ -14,6 +14,9 @@ import java.util.stream.Collectors;
 
 import edu.kit.student.graphmodel.DefaultVertex;
 import edu.kit.student.joana.InterproceduralEdge;
+import edu.kit.student.plugin.EdgeFilter;
+import edu.kit.student.plugin.VertexFilter;
+import edu.kit.student.sugiyama.LayoutedGraph;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -126,6 +129,59 @@ public class MethodGraphLayout implements LayoutAlgorithm<MethodGraph> {
 		
 		//draws interprocedural vertices of this graph. 
 		drawInterproceduralEdges(graph);
+	}
+
+	/**
+	 * Layouts the given graph without any filter active.
+	 * Then saves the graph's vertices and edges in a {@link LayoutedGraph} in the given {@link MethodGraph}.
+	 *
+	 * @param graph graph to layout and save
+	 */
+	public void layoutAndSaveWholeGraph(MethodGraph graph){
+		//save active vertex- and edgefilter
+		List<VertexFilter> vertexFilters = new LinkedList<>(graph.getActiveVertexFilter());
+		List<EdgeFilter> edgeFilters = new LinkedList<>(graph.getActiveEdgeFilter());
+
+		//clear active vertex- and edgefilter
+		graph.setVertexFilter(new LinkedList<>());
+		graph.setEdgeFilter(new LinkedList<>());
+
+		//layout given methodgraph without filters
+		this.layout(graph);
+
+		//set the graphs active vertex- and edgefilter again
+		graph.setVertexFilter(vertexFilters);
+		graph.setEdgeFilter(edgeFilters);
+
+		//export the state of the graph layouted
+		LayoutedGraph lg = this.sugiyamaLayoutAlgorithm.exportLayoutedGraph();
+
+		//save the exported graph in the given methodgraph
+		graph.setLayoutedGraph(lg);
+
+	}
+
+	/**
+	 * Redraws the edges of the given {@link MethodGraph}.
+	 * Therefore uses the {@link LayoutedGraph} of the given graph.
+	 *
+	 *
+	 * @param graph graph to relayout its edges
+	 */
+	public void relayoutEdges(MethodGraph graph){
+		LayoutedGraph lg = graph.getLayoutedGraph();
+		if(lg == null)
+			return;
+		Set<Vertex> vertices = lg.getVertices();
+		Set<DirectedEdge> edges = lg.getEdges();
+		Set<DirectedSupplementEdgePath> paths = lg.getPaths();
+
+		//remove interprocedural edges from edgeset and their dummies from vertex set
+		//(fieldAccesses should still be collapsed ???) so filter in the fieldAccesses and relayout the edges in there!
+
+		//call drawEdgesNew with vertices, edges, paths
+
+		//draw the not filtered ie's new,(let the dummies even if the edges are filtered!?!)TODO: ALWAYS let the dummies of an interprocedural edge even the edge itself is filtered!!!
 	}
 	
 	/**
