@@ -7,10 +7,9 @@ import edu.kit.student.objectproperty.GAnsProperty;
  * A Parameter contains a value and a name. The value can be transformed into a string.
  * Clients can set Listeners to track changes of the value.
  * Classes inheriting from this class can visited by a ParameterVisitor.
- * @param <T> 
- * @param <V> 
+ * @param <V> the type of the value of the parameter
  */
-public abstract class Parameter<T, V extends Object> extends GAnsProperty<V> {
+public abstract class Parameter<V> extends GAnsProperty<V> {
 	
 	private V tempValue;
 	

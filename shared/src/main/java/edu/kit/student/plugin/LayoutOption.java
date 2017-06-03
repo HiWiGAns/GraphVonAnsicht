@@ -31,7 +31,7 @@ public abstract class LayoutOption extends EntryPointOption implements Cloneable
      * @return the set of parameters
      */
     public Settings getSettings() {
-        List<Parameter<?, ?>> parameters = new LinkedList<>();
+        List<Parameter<?>> parameters = new LinkedList<>();
         parameters.add(new BooleanParameter(LanguageManager.getInstance().get("fix_vpos"), false));
         return new Settings(LanguageManager.getInstance().get("general"), parameters);
     }

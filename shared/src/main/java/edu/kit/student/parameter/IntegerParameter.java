@@ -3,7 +3,7 @@ package edu.kit.student.parameter;
 /**
  * IntegerParameters are parameters with an integer value space.
  */
-public class IntegerParameter extends Parameter<IntegerParameter, Integer> {
+public class IntegerParameter extends Parameter<Integer> {
     private int min;
     private int max;
 

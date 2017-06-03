@@ -126,7 +126,7 @@ public class SugiyamaLayoutAlgorithm<G extends DirectedGraph>
 		if (this.settings != null) {
 			return this.settings;
 		}
-		LinkedList<Parameter<?,?>> parameter = new LinkedList<>();
+		LinkedList<Parameter<?>> parameter = new LinkedList<>();
 
 		settings = new Settings("Sugiyama-Layout", parameter);
 		settings.addSubSetting(minimizer.getSettings());

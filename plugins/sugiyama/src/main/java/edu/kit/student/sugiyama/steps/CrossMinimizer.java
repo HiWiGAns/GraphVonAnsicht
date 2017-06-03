@@ -37,6 +37,13 @@ public class CrossMinimizer implements ICrossMinimizer {
 	private Settings settings;
 	private Map<ISugiyamaVertex,List<Set<ISugiyamaVertex>>> vertexToInOutVertices;
 
+	BooleanParameter stopOnThresholdParam
+			= new BooleanParameter(LanguageManager.getInstance().get("sugiy_cross_threshold_use"), false);
+	DoubleParameter thresholdParam
+			= new DoubleParameter(LanguageManager.getInstance().get("sugiy_cross_threshold_reduct"), 0.001, 0.001, 0.01, 0.001);
+	IntegerParameter maxRunsParam
+			= new IntegerParameter(LanguageManager.getInstance().get("sugiy_cross_max_runs"), 100, 1, 999999);
+
     private final Logger logger = LoggerFactory.getLogger(CrossMinimizer.class);
 
 	public CrossMinimizer() {
@@ -64,12 +71,9 @@ public class CrossMinimizer implements ICrossMinimizer {
 	@Override
 	public void minimizeCrossings(ICrossMinimizerGraph graph) {
 		if (settings != null) {
-			this.stopOnThreshold = Settings.unpackBoolean(
-					(Parameter<?, Boolean>) getSettings().get(LanguageManager.getInstance().get("sugiy_cross_threshold_use")));
-			setCrossingReductionThreshold(Settings.unpackDouble(
-					(Parameter<?, Double>) getSettings().get(LanguageManager.getInstance().get("sugiy_cross_threshold_reduct"))));
-			setMaxRuns(Settings.unpackInteger(
-					(Parameter<?, Integer>) getSettings().get(LanguageManager.getInstance().get("sugiy_cross_max_runs"))));
+			this.stopOnThreshold = stopOnThresholdParam.getValue();
+			setCrossingReductionThreshold(thresholdParam.getValue());
+			setMaxRuns(maxRunsParam.getValue());
 		}
 
 		logger.info("CrossMinimizer.minimizeCrossings():");
@@ -141,14 +145,11 @@ public class CrossMinimizer implements ICrossMinimizer {
 			return this.settings;
 		}
 
-		BooleanParameter p1 = new BooleanParameter(LanguageManager.getInstance().get("sugiy_cross_threshold_use"), false);
-		DoubleParameter p2 = new DoubleParameter(LanguageManager.getInstance().get("sugiy_cross_threshold_reduct"), 0.001, 0.001, 0.01, 0.001);
-		IntegerParameter p3 = new IntegerParameter(LanguageManager.getInstance().get("sugiy_cross_max_runs"), 100, 1, 999999);
 
-		LinkedList<Parameter<?,?>> parameter = new LinkedList<>();
-		parameter.add(p1);
-		parameter.add(p2);
-		parameter.add(p3);
+		LinkedList<Parameter<?>> parameter = new LinkedList<>();
+		parameter.add(stopOnThresholdParam);
+		parameter.add(thresholdParam);
+		parameter.add(maxRunsParam);
 		Settings settings = new Settings(LanguageManager.getInstance().get("sugiy_cross_minimizer"), parameter);
 		this.settings = settings;
 		return settings;

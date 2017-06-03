@@ -3,7 +3,7 @@ package edu.kit.student.parameter;
 /**
  * DoubleParameters are parameters with an double value space.
  */
-public class DoubleParameter extends Parameter<DoubleParameter, Double> {
+public class DoubleParameter extends Parameter<Double> {
 	private Double min;
 	private Double max;
 	private Double amountPerStep;

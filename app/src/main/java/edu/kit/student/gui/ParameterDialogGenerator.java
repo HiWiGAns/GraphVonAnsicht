@@ -50,7 +50,7 @@ public class ParameterDialogGenerator extends ParameterVisitor {
 	private StringConverter<Integer> intConverter;
 	private StringConverter<Double> doubleConverter;
 
-	private List<Parameter<?, ?>> parameters;
+	private List<Parameter<?>> parameters;
 	private Settings settings;
 
 	/**
@@ -82,7 +82,7 @@ public class ParameterDialogGenerator extends ParameterVisitor {
 
 		parameters = new LinkedList<>(settings.getParameters());
 
-		for (Parameter<?, ?> p : parameters) {
+		for (Parameter<?> p : parameters) {
 			p.accept(this);
 		}
 		for (Settings subSetting : settings.getSubSettings()) {
@@ -212,7 +212,7 @@ public class ParameterDialogGenerator extends ParameterVisitor {
 	}
 
 	private void resetParameters() {
-		for (Parameter<?, ?> p : parameters) {
+		for (Parameter<?> p : parameters) {
 			p.propertyValue().unbind();
 			p.reset();
 		}

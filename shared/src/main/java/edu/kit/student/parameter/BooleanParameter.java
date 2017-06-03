@@ -3,7 +3,7 @@ package edu.kit.student.parameter;
 /**
  * BooleanParameter are parameters with an boolean value space.
  */
-public class BooleanParameter extends Parameter<BooleanParameter, Boolean> {
+public class BooleanParameter extends Parameter<Boolean> {
 
 	/**
      * Constructs a new BooleanParameter, sets its name and its default value.

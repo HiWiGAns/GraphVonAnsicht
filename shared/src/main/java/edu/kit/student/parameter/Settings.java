@@ -10,7 +10,7 @@ import java.util.List;
  */
 public class Settings {
 
-    private final List<Parameter<?,?>> parameters;
+    private final List<Parameter<?>> parameters;
 
     private final List<Settings> subSettings;
 
@@ -20,7 +20,7 @@ public class Settings {
      * Constructs a new Settings object and sets its parameters.
      * @param parameters the parameters the Settings object will have
      */
-    public Settings(String name, List<Parameter<?,?>> parameters) {
+    public Settings(String name, List<Parameter<?>> parameters) {
         this.name = name;
         this.parameters = new LinkedList<>(parameters);
         this.subSettings = new LinkedList<>();
@@ -43,27 +43,15 @@ public class Settings {
      * @param key the key which is associated with the Parameter
      * @return the Parameter associated with the given key
      */
-    public Parameter<?,?> get(String key) {
+    public Parameter<?> get(String key) {
         return parameters.stream().filter(p -> p.getName().equals(key)).findFirst().orElse(null);
-    }
-
-    public static double unpackDouble(Parameter<?, Double> parameter) {
-        return parameter.getValue();
-    }
-
-    public static int unpackInteger(Parameter<?, Integer> parameter) {
-        return parameter.getValue();
-    }
-
-    public static boolean unpackBoolean(Parameter<?, Boolean> parameter) {
-        return parameter.getValue();
     }
 
     /**
      * Returns all Parameters in the Settings object.
      * @return all Parameters in the Settings object.
      */
-    public List<Parameter<?,?>> getParameters() {
+    public List<Parameter<?>> getParameters() {
         return new LinkedList<>(parameters);
     }
 

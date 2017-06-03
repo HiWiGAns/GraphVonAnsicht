@@ -6,7 +6,7 @@ import java.util.List;
 /**
  * MultipleChoiceParameter are parameters with an predefined String value space.
  */
-public class MultipleChoiceParameter extends Parameter<MultipleChoiceParameter, String> {
+public class MultipleChoiceParameter extends Parameter<String> {
 	private int selectedIndex;
 	private List<String> values;
 

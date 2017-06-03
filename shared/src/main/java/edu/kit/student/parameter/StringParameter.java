@@ -3,7 +3,7 @@ package edu.kit.student.parameter;
 /**
  * StringParameter are parameters with an freely set String value space.
  */
-public class StringParameter extends Parameter<StringParameter, String> {
+public class StringParameter extends Parameter<String> {
 
     /**
      * Constructs a new StringParameter, sets its name and its default value.
