@@ -90,6 +90,11 @@ public class GraphView extends Pane {
 	public void reloadGraph() {
 		graphFactory.refreshGraph();
 
+		lastVertexFilter.clear();
+		lastVertexFilter.addAll(graphFactory.getGraph().getActiveVertexFilter());
+		lastEdgeFilter.clear();
+		lastEdgeFilter.addAll(graphFactory.getGraph().getActiveEdgeFilter());
+
 		getChildren().clear();
 		getChildren().addAll(graphFactory.getGraphicalElements());
 		double maxX = 0;
