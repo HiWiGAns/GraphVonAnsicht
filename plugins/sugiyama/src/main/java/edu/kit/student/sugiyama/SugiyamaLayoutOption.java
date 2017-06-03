@@ -23,7 +23,7 @@ public class SugiyamaLayoutOption extends DirectedGraphLayoutOption {
 		if (algo == null) {
 			chooseLayout();
 		}
-		return this.algo.getSettings();
+		return algo.getSettings();
 	}
 
 	@Override

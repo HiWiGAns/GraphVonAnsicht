@@ -1,13 +1,5 @@
 package edu.kit.student.sugiyama;
 
-import java.util.Date;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.Set;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import edu.kit.student.graphmodel.DefaultVertex;
 import edu.kit.student.graphmodel.DirectedSupplementEdgePath;
 import edu.kit.student.graphmodel.Vertex;
@@ -28,6 +20,13 @@ import edu.kit.student.sugiyama.steps.ILayerAssigner;
 import edu.kit.student.sugiyama.steps.IVertexPositioner;
 import edu.kit.student.sugiyama.steps.LayerAssigner;
 import edu.kit.student.sugiyama.steps.VertexPositioner;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.Date;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.Set;
 
 /**
  * This class supports a customizable implementation of the Sugiyama-framework.
@@ -128,9 +127,9 @@ public class SugiyamaLayoutAlgorithm<G extends DirectedGraph>
 			return this.settings;
 		}
 		//Needs to be a LinkedHashMap, because the parameters might need to be displayed in a specific order to make sense
-		LinkedHashMap<String, Parameter<?,?>> parameter = new LinkedHashMap<>(this.minimizer.getSettings().getParameters());
+		LinkedList<Parameter<?,?>> parameter = new LinkedList<>(this.minimizer.getSettings().getParameters());
 
-		Settings  settings = new Settings(parameter);
+		Settings settings = new Settings("Sugiyama-Layout", parameter);
 		this.settings = settings;
 		return settings;
 	}

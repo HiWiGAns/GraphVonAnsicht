@@ -1,12 +1,12 @@
 package edu.kit.student.graphmodel.viewable;
 
-import java.util.HashMap;
-
 import edu.kit.student.graphmodel.GraphModel;
 import edu.kit.student.graphmodel.builder.IGraphModelBuilder;
-import edu.kit.student.parameter.Parameter;
 import edu.kit.student.parameter.Settings;
 import edu.kit.student.plugin.Workspace;
+import edu.kit.student.util.LanguageManager;
+
+import java.util.LinkedList;
 
 public class GenericWorkspace implements Workspace {
 
@@ -15,7 +15,7 @@ public class GenericWorkspace implements Workspace {
 	private GenericGraphModel model;
 	
 	GenericWorkspace() {
-		settings = new Settings( new HashMap<String, Parameter<?,?>>());
+		settings = new Settings(LanguageManager.getInstance().get("general"), new LinkedList<>());
 		builder = new GenericGraphModelBuilder(this);
 	}
 

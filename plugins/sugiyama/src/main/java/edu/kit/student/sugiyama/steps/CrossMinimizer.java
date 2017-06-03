@@ -1,6 +1,5 @@
 package edu.kit.student.sugiyama.steps;
 
-import edu.kit.student.graphmodel.Vertex;
 import edu.kit.student.parameter.BooleanParameter;
 import edu.kit.student.parameter.DoubleParameter;
 import edu.kit.student.parameter.IntegerParameter;
@@ -10,7 +9,6 @@ import edu.kit.student.sugiyama.graph.ICrossMinimizerGraph;
 import edu.kit.student.sugiyama.graph.ISugiyamaEdge;
 import edu.kit.student.sugiyama.graph.ISugiyamaVertex;
 import edu.kit.student.sugiyama.graph.SugiyamaGraph;
-import edu.kit.student.util.IntegerPoint;
 import edu.kit.student.util.LanguageManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,12 +16,10 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.OptionalDouble;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -149,12 +145,11 @@ public class CrossMinimizer implements ICrossMinimizer {
 		DoubleParameter p2 = new DoubleParameter(LanguageManager.getInstance().get("sugiy_cross_threshold_reduct"), 0.001, 0.001, 0.01, 0.001);
 		IntegerParameter p3 = new IntegerParameter(LanguageManager.getInstance().get("sugiy_cross_max_runs"), 100, 1, 999999);
 
-		//Needs to be a LinkedHashMap, because the parameters might need to be displayed in a specific order to make sense
-		LinkedHashMap<String, Parameter<?,?>> parameter = new LinkedHashMap<>();
-		parameter.put(p1.getName(), p1);
-		parameter.put(p2.getName(), p2);
-		parameter.put(p3.getName(), p3);
-		Settings settings = new Settings(parameter);
+		LinkedList<Parameter<?,?>> parameter = new LinkedList<>();
+		parameter.add(p1);
+		parameter.add(p2);
+		parameter.add(p3);
+		Settings settings = new Settings(LanguageManager.getInstance().get("sugiy_cross_minimizer"), parameter);
 		this.settings = settings;
 		return settings;
 	}

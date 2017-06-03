@@ -38,7 +38,7 @@ import java.util.Optional;
 /**
  * Generates a parameter dialog given a parent node and a set of parameters.
  * 
- * @author Lucas
+ * @author Lucas Steinmann
  */
 public class ParameterDialogGenerator extends ParameterVisitor {
 	private GridPane parent;
@@ -65,7 +65,7 @@ public class ParameterDialogGenerator extends ParameterVisitor {
 		this.initIntConverter();
 		this.initDoubleConverter();
 
-		parameters = new LinkedList<Parameter<?, ?>>(settings.values());
+		parameters = new LinkedList<Parameter<?, ?>>(settings.getParameters());
 
 		for (Parameter<?, ?> p : parameters) {
 			p.accept(this);

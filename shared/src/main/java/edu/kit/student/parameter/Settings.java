@@ -1,34 +1,52 @@
 package edu.kit.student.parameter;
 
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * A compound object to store parameters.
+ *
+ * @author Lucas Steinmann, Nicolas Boltz
  */
 public class Settings {
-    Map<String, Parameter<?,?>> parameters;
+
+    private final Map<String, Parameter<?,?>> parameters;
+    private final Map<String, Settings> subSettings;
+
+    private String name;
 
     /**
-     * Constructs a new Settings-Object and sets its parameters.
-     * @param parameters The parameters the Settings-Object will have.
+     * Constructs a new Settings object and sets its parameters.
+     * @param parameters the parameters the Settings object will have
      */
-    public Settings(Map<String, Parameter<?,?>> parameters) {
-        this.parameters = parameters;
+    public Settings(String name, List<Parameter<?,?>> parameters) {
+        this.name = name;
+        this.parameters = new HashMap<>();
+        this.subSettings = new HashMap<>();
+        for (Parameter<?, ?> parameter : parameters)
+            this.parameters.put(parameter.getName(), parameter);
     }
 
     /**
      * Returns the amount of parameters in the Settings.
-     * @return The amount of parameters in the Settings.
+     * @return the amount of parameters in the Settings
      */
     public int size() {
         return parameters.size();
     }
 
+    public boolean isEmpty() {
+        return parameters.isEmpty() && subSettings.values().stream().allMatch(Settings::isEmpty);
+    }
+
     /**
      * Returns the Parameter associated with the given key.
-     * @param key The key which is associated with the Parameter.
-     * @return The Parameter associated with the given key.
+     * @param key the key which is associated with the Parameter
+     * @return the Parameter associated with the given key
      */
     public Parameter<?,?> get(String key) {
         return parameters.get(key);
@@ -47,18 +65,31 @@ public class Settings {
     }
 
     /**
-     * Returns all the Parameters in the Settings-Object.
-     * @return All the Parameters in the Settings-Object.
+     * Returns all the Parameters in the Settings object.
+     * @return all the Parameters in the Settings object.
      */
-    public Collection<Parameter<?,?>> values() {
-        return parameters.values();
+    public Collection<Parameter<?,?>> getParameters() {
+        Set<Parameter<?, ?>> parameters = new HashSet<>();
+        parameters.addAll(this.parameters.values());
+        for (Settings set : subSettings.values())
+            parameters.addAll(set.getParameters());
+        return parameters;
     }
 
-    /**
-     * Returns the map containing all the parameters.
-     * @return A map containing all the parameters.
-     */    
-    public Map<String, Parameter<?,?>> getParameters() {
-    	return parameters;
+    public boolean containsParameter(String name) {
+        return parameters.containsKey(name) || subSettings.values().stream().anyMatch(s -> s.containsParameter(name));
     }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public void addSubSetting(Settings settings) {
+        this.subSettings.put(settings.getName(), settings);
+    }
+
 }

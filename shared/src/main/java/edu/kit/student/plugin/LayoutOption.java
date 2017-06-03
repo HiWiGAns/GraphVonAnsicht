@@ -1,6 +1,12 @@
 package edu.kit.student.plugin;
 
+import edu.kit.student.parameter.BooleanParameter;
+import edu.kit.student.parameter.Parameter;
 import edu.kit.student.parameter.Settings;
+import edu.kit.student.util.LanguageManager;
+
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  * An option for a layout of a specific graph.
@@ -24,7 +30,11 @@ public abstract class LayoutOption extends EntryPointOption implements Cloneable
      * 
      * @return the set of parameters
      */
-    public abstract Settings getSettings();
+    public Settings getSettings() {
+        List<Parameter<?, ?>> parameters = new LinkedList<>();
+        parameters.add(new BooleanParameter(LanguageManager.getInstance().get("fix_vpos"), false));
+        return new Settings(LanguageManager.getInstance().get("general"), parameters);
+    }
     
     
     /**
