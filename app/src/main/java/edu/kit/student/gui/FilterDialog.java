@@ -54,6 +54,11 @@ public class FilterDialog extends Dialog<ButtonType> {
 
     private final Logger logger = LoggerFactory.getLogger(GraphViewSelectionModel.class);
 
+    private static final int minWindowWidth = 500;
+    private static final int minWindowHeight = 400;
+
+    private enum Props { filterdialog_x, filterdialog_y, filterdialog_width, filterdialog_height }
+
     public static final ButtonType applyAndLayout = new ButtonType("Apply and Layout", ButtonBar.ButtonData.APPLY);
 
     /**
@@ -69,6 +74,51 @@ public class FilterDialog extends Dialog<ButtonType> {
      */
     public FilterDialog(List<VertexFilter> activeVertexFilter, List<EdgeFilter> activeEdgeFilter) {
         super();
+
+        TabPane tabPane = fillDialog(activeVertexFilter, activeEdgeFilter);
+
+        Stage stage = (Stage) getDialogPane().getScene().getWindow();
+        stage.getIcons().add(new Image("gans_icon.png"));
+        stage.setMinWidth(minWindowWidth);
+        stage.setMinHeight(minWindowHeight);
+
+        getDialogPane().setContent(tabPane);
+        getDialogPane().getButtonTypes().addAll(ButtonType.APPLY, applyAndLayout, ButtonType.CLOSE);
+
+        setOnCloseRequest(e -> saveSettings());
+        loadConfig();
+        setTitle(LanguageManager.getInstance().get("wind_filter_title"));
+        setHeaderText(null);
+        setGraphic(null);
+        setResizable(true);
+    }
+
+    private void loadConfig() {
+        Stage stage = (Stage) getDialogPane().getScene().getWindow();
+        ApplicationSettings settings = ApplicationSettings.getInstance();
+        if (settings.hasProperty(Props.filterdialog_x.name())
+                && settings.hasProperty(Props.filterdialog_y.name())) {
+            setX(settings.getPropertyAsDouble(Props.filterdialog_x.name()));
+            setY(settings.getPropertyAsDouble(Props.filterdialog_y.name()));
+        }
+        if (settings.hasProperty(Props.filterdialog_width.name())
+                && settings.hasProperty(Props.filterdialog_height.name())) {
+            getDialogPane().setPrefSize(settings.getPropertyAsDouble(Props.filterdialog_width.name()),
+                                        settings.getPropertyAsDouble(Props.filterdialog_height.name()));
+        }
+    }
+
+    private void saveSettings() {
+        Stage stage = (Stage) getDialogPane().getScene().getWindow();
+        ApplicationSettings settings = ApplicationSettings.getInstance();
+        settings.setProperty(Props.filterdialog_x.name(), this.getX());
+        settings.setProperty(Props.filterdialog_y.name(), this.getY());
+        settings.setProperty(Props.filterdialog_width.name(), stage.getWidth());
+        settings.setProperty(Props.filterdialog_height.name(), stage.getHeight());
+        settings.saveSettings();
+    }
+
+    private TabPane fillDialog(List<VertexFilter> activeVertexFilter, List<EdgeFilter> activeEdgeFilter) {
 
         // Create the vertex filter tab
         TabPane tabPane = new TabPane();
@@ -107,32 +157,19 @@ public class FilterDialog extends Dialog<ButtonType> {
         vertexGroups.setPadding(new Insets(10, 0, 0, 0));
         ScrollPane vertexScroll = new ScrollPane(vertexGroups);
         vertexScroll.setFitToWidth(true);
-        vertexScroll.setPrefSize(500, 450);
+//        vertexScroll.setPrefSize(500, 450);
         vertexFilterTab.setContent(vertexScroll);
 
         VBox edgeGroups = new VBox(10, checkAllEdge, edgeCheckboxes);
         edgeGroups.setPadding(new Insets(20, 0, 0, 0));
         ScrollPane edgeScroll = new ScrollPane(edgeGroups);
         edgeScroll.setFitToWidth(true);
-        edgeScroll.setPrefSize(500, 450);
+//        edgeScroll.setPrefSize(500, 450);
         edgeFilterTab.setContent(edgeScroll);
 
         tabPane.getTabs().addAll(vertexFilterTab, edgeFilterTab);
 
-        this.getDialogPane().setContent(tabPane);
-
-
-        this.getDialogPane().getButtonTypes().addAll(ButtonType.APPLY, applyAndLayout, ButtonType.CLOSE);
-        this.setTitle(LanguageManager.getInstance().get("wind_filter_title"));
-        this.setHeaderText(null);
-        this.setGraphic(null);
-        this.setResizable(true);
-        this.setWidth(500);
-        this.setHeight(500);
-        Stage stage = (Stage) this.getDialogPane().getScene().getWindow();
-        stage.setMinHeight(400);
-        stage.setMinWidth(500);
-        stage.getIcons().add(new Image("gans_icon.png"));
+        return tabPane;
     }
 
     private Pane createCheckboxSetPane(List<FilterCheckBox> checkBoxes,
