@@ -20,6 +20,7 @@ import edu.kit.student.graphmodel.FastGraphAccessor;
 import edu.kit.student.graphmodel.OrthogonalEdgePath;
 import edu.kit.student.graphmodel.Vertex;
 import edu.kit.student.graphmodel.directed.DefaultDirectedGraph;
+import edu.kit.student.graphmodel.directed.DefaultDirectedSupplementEdgePath;
 import edu.kit.student.graphmodel.directed.DirectedEdge;
 import edu.kit.student.graphmodel.directed.DirectedGraph;
 import edu.kit.student.objectproperty.GAnsProperty;
@@ -79,17 +80,26 @@ public class SugiyamaGraph
 	}
 
 	/**
-	 * Builds a SugiyamaGraph, consisting of vertices, edges and Supplementpaths, like SupplementPaths in SugiyamaGraph.
-	 * The Set of paths is optional, it can be null or empty. 
-	 * If paths is not empty the constructed SugiyamaGraph will be used just for EdgeDrawing. 
-	 * 
-	 * @param name name of this SugiyamaGraph
+	 * Builds a SugiyamaGraph, consisting of vertices, edges and {@link DirectedSupplementEdgePath}s, like SupplementPaths in SugiyamaGraph.<p>
+	 * The Set of paths is optional, it can be null or empty. <p>
+	 * If paths is not empty the constructed SugiyamaGraph will be used just for EdgeDrawing.<p>
+	 *
+	 * Just use this constructor if you want to redraw given edges and paths. Positions of vertices stay the same and are asserted to be set yet! <p>
+	 * Not recommended for use in the whole sugiyama-steps !!! <p>
+	 *
+	 * Note: this constructor asserts that the ids of the given vertices are<p>
+	 *             1. either all positive, (case of a normal graph)<p>
+	 *             2. or that just on top and bottom(first and last layer) are vertices with negative id;<p>
+	 *                 but only these vertices represent a normal vertex, not, like other vertices with a negative id represent a dummy<p>
+	 *                (only used in case of a FieldAccess where on the top and bottom dummies simulating incoming and outgoing points at the FieldAccess)<p>
+	 *
+	 *
 	 * @param vertices vertices to be contained in this SugiyamaGraph
 	 * @param edges edges to be contained in this SugiyamaGraph
-	 * @param paths Optional, can be empty or null. The paths replace a certain edge which is then not contained in the edgeset. 
-	 * Just use these if you want to redraw given edges and vertices. not recommended for use in the whole sugiyama-steps.
+	 * @param paths Optional, can be empty or null. The paths replace a certain edge which is then not contained in the edgeset.
+	 *
 	 */
-	public SugiyamaGraph(String name, Set<Vertex> vertices, Set<DirectedEdge> edges, Set<DirectedSupplementEdgePath> paths) {
+	public SugiyamaGraph(Set<Vertex> vertices, Set<DirectedEdge> edges, Set<DirectedSupplementEdgePath> paths) {
 		
 		HashSet<ISugiyamaVertex> sugyVertices = new HashSet<>();	//only SugiyamaVertices
 		HashSet<ISugiyamaEdge> sugyEdges = new HashSet<>();	//only SugiyamaEdges
@@ -99,17 +109,26 @@ public class SugiyamaGraph
 		layerPositions = new LinkedList<>();
 		layerPositions.add(0);
 		
-		//add here points for later layer assigning
-		for (Vertex vertex: vertices){	//add every different position to list, to assign layers later
+		//add here from each vertex it's y-coordinate to the list for later layer assigning
+		for (Vertex vertex: vertices){	//add every different position to list, to assign layers later, TODO: might be slow as O(#vertices * #points/layers)
 			if(!yValsOfVertices.contains(vertex.getY())){
 				yValsOfVertices.add(vertex.getY());	
 			}
 		}
 		yValsOfVertices.sort(Double::compare);	//sorts y vals in ascending order
 		//assign every vertex a layer, vertices on first or last layer are normal SugiyamaVertex though they have a negative id
-		//dummies will be assigned at the path building
+		//dummies will be assigned a layer at the path building
 		for(Vertex v : vertices){
-			for(int i = 0; i < yValsOfVertices.size(); i++){
+			int idx = Collections.binarySearch(yValsOfVertices, v.getY());
+			assert(idx >= 0 && idx < yValsOfVertices.size());
+			if(v.getID() >= 0 || idx == 0 || idx == yValsOfVertices.size() - 1) { //just dummies on top or bottom layer are representing normal vertices.
+				SugiyamaVertex sugiyamaVertex = new SugiyamaVertex(v);
+				sugyVertices.add(sugiyamaVertex);	//fills vertexset with all wrapped vertices
+				tmpVertexMap.put(v.getID(), sugiyamaVertex);
+				this.assignToLayer(sugiyamaVertex, idx);
+			}
+
+			/*for(int i = 0; i < yValsOfVertices.size(); i++){
 				if(yValsOfVertices.get(i).equals(v.getY())){	//assign here the layer
 					if(i == 0 || i == yValsOfVertices.size() - 1 || v.getID() >= 0){//first or last layer, or normal vertex -> SugiyamaVertex
 						SugiyamaVertex sugiyamaVertex = new SugiyamaVertex(v);
@@ -119,7 +138,7 @@ public class SugiyamaGraph
 						break;
 					}
 				}
-			}
+			}*/
 		}
 		
 		//only wrap edges that are normal edges (from or to last layer with layer diff ==1 or between two normal vertices with layer diff == 1)
@@ -139,13 +158,12 @@ public class SugiyamaGraph
 				}
 			}
 		}
-		//created dummies, supplementEdges and supplementPaths are added to the graph in the method which is creating them
+		//created dummies, supplementEdges and supplementPaths are added to the graph in the method which creates them
 		this.graph = new DefaultDirectedGraph<>(sugyVertices, sugyEdges);
 
 		//now iterate over all paths and construct the correct SupplementPath, also construct:
-		//representingVertex->sugyVertex, assign it a layer!,  dummies->dummyVertex(also add them to sugyVertices set), 
-		//supplementEdges->SupplementEdge(also add them to sugyEdges set)
-		for(DirectedSupplementEdgePath p : paths){//TODO: add dummies and supp edges and watch out for direction!
+		//replaced edge -> sugy edge TODO: are both of it's vertices assigned to a layer yet ? In case if there is just a path between 2 vertices and no other edge -> vertices not in normal set
+		for(DirectedSupplementEdgePath p : paths){//add dummies and supp edges and watch out for direction!
 			DirectedEdge replaced = p.getReplacedEdge();
 			List<Vertex> pathDummies = p.getDummyVertices();
 			ISugiyamaEdge tempReplacedEdge = new SugiyamaEdge(replaced, tmpVertexMap.get(replaced.getSource().getID()), tmpVertexMap.get(replaced.getTarget().getID()));
@@ -166,10 +184,8 @@ public class SugiyamaGraph
 			}
 			this.graph.addAllVertices(new HashSet<>(tempDummies));
 			assert(layer == tempReplacedEdge.getTarget().getLayer());	//to ensure correct layer numbers for source, target and dummies!
+
 			List<ISugiyamaEdge> tempSupplementEdges = new LinkedList<>();
-			//TODO: turn the replaced edge if necessary and turn also dummies, watch out to set their layers correctly
-//			int upOrDown = tempReplacedEdge.getSource().getLayer() > tempReplacedEdge.getTarget().getLayer() ? -1 : 1;
-			//TODO: differ between turned and not turned replaced edges of the supplement path!!!
 			SupplementEdge newSuppE = new SupplementEdge("","", tempReplacedEdge.getSource(), tempDummies.get(0));
 			tempSupplementEdges.add(newSuppE);
 			for(int i = 0; i < tempDummies.size() - 1; i++){
@@ -182,8 +198,6 @@ public class SugiyamaGraph
 			this.graph.addAllEdges(new HashSet<>(tempSupplementEdges));
 			SupplementPath tempSupplementPath = this.createSupplementPath(tempReplacedEdge, tempDummies, tempSupplementEdges);
 			this.supplementPaths.add(tempSupplementPath);
-//			sugyVertices.addAll(tempDummies);	//add dummies to normal vertex set
-//			sugyEdges.addAll(tempSupplementEdges);	//add SupplementEdges to normal edge set
 //			checkSupplementPath(tempSupplementPath);
 		}
 	}
@@ -213,6 +227,56 @@ public class SugiyamaGraph
 //	private void replaceWithSupplementPath(ISugiyamaEdge edge, int length) {
 //		//TODO implement ? or unnecessary ?! edges are yet replaced with createSupplementpath()
 //	}
+
+	/**
+	 * Exports the normal vertices that have been wrapped by a SugiyamaVertex.
+	 * No dummies are contained here!
+	 * The mapping contains vertex to its layer.
+	 *
+	 * @return mapping of normal vertex to its layer
+	 */
+	public Set<Vertex> exportVertices(){
+		Set<Vertex> vertices = new HashSet<>();
+		for(ISugiyamaVertex v : this.getVertexSet()){
+			if(!v.isDummy())
+				vertices.add(v.getVertex());
+		}
+		return vertices;
+	}
+
+	/**
+	 * Exports normal edges that have been wrapped by SugiyamaEdge.
+	 * No supplementEdges are contained!
+	 *
+	 *
+	 * @return normal edges of this SugiyamaGraph.
+	 */
+	public Set<DirectedEdge> exportEdges(){
+		Set<DirectedEdge> edges = new HashSet<>();
+		for(ISugiyamaEdge e : this.getEdgeSet()){
+			if(!e.isSupplementEdge())
+				edges.add(e.getWrappedEdge());
+		}
+		return edges;
+	}
+
+	/**
+	 * Exports the supplement paths of this SugiyamaGraph.
+	 *
+	 * @return a set of {@link DefaultDirectedSupplementEdgePath} describing the supplement paths of this SugiyamaGraph
+	 */
+	public Set<DefaultDirectedSupplementEdgePath> exportPaths(){
+		Set<DefaultDirectedSupplementEdgePath> paths = new HashSet<>();
+		for(SupplementPath p : this.getSupplementPaths()){
+			List<Vertex> dummies = new LinkedList<>();
+			List<DirectedEdge> suppEdges = new LinkedList<>();
+			p.getDummyVertices().forEach(v->dummies.add(v.getVertex()));
+			p.getSupplementEdges().forEach(e->suppEdges.add(e.getWrappedEdge()));
+			paths.add(new DefaultDirectedSupplementEdgePath(p.getReplacedEdge().getWrappedEdge(), dummies, suppEdges));
+		}
+		return paths;
+	}
+
 
 	public Set<SupplementPath> getSupplementPaths() {
 		return supplementPaths;

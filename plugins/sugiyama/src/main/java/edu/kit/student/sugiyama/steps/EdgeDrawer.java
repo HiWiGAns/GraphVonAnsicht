@@ -116,9 +116,9 @@ public class EdgeDrawer implements IEdgeDrawer {
 	private void printVertices(){
 	    for(int i = 0; i < graph.getLayerCount() - 1; i++){
 	        List<ISugiyamaVertex> vertices = graph.getSortedLayer(i);
-	        String out = "";
+	        StringBuilder out = new StringBuilder();
 	        for(ISugiyamaVertex v : vertices){
-	            out += "pos:[" + v.getX() + "," + v.getY() + "] size:(" + v.getSize().x + "," + v.getSize().y + "); ";
+	            out.append("pos:[").append(v.getX()).append(",").append(v.getY()).append("] size:(").append(v.getSize().x).append(",").append(v.getSize().y).append("); ");
             }
             System.out.println(out);
         }
@@ -131,13 +131,13 @@ public class EdgeDrawer implements IEdgeDrawer {
 		edges.addAll(this.sameLayerEdges);
 		this.paths.forEach(p->edges.add(p.getReplacedEdge()));
 		for(ISugiyamaEdge e : edges){
-			String out = "";
-			out += "("+e.getSource().getName() + "->" + e.getTarget().getName()+")";
-			out += e.getPath().getNodes().size() + "[";
+			StringBuilder out = new StringBuilder();
+			out.append("(").append(e.getSource().getName()).append("->").append(e.getTarget().getName()).append(")");
+			out.append(e.getPath().getNodes().size()).append("[");
 			for(DoublePoint p : e.getPath().getNodes()){
-				out += "(" + p.x + "," + p.y + ")|";
+				out.append("(").append(p.x).append(",").append(p.y).append(")|");
 			}
-			out += "]";
+			out.append("]");
 			if(e.getPath().getNodes().isEmpty())
 				System.out.println(out);
 		}
@@ -318,17 +318,17 @@ public class EdgeDrawer implements IEdgeDrawer {
 	private void printVertexToEdgeMapping(){
 	    for(ISugiyamaVertex v : this.graphVertices){
 	        if(!this.vertexToEdges.containsKey(v.getID())) continue;
-	        String out = "[";
+	        StringBuilder out = new StringBuilder("[");
 	        for(ISugiyamaEdge e : vertexToEdges.get(v.getID()).get(0)){
-	            out+=e.getID() + ",";
+	            out.append(e.getID()).append(",");
             }
-            out = out.substring(0,out.length()-1);
-	        out += "](" + v.getID() + ")[";
+            out = new StringBuilder(out.substring(0, out.length() - 1));
+	        out.append("](").append(v.getID()).append(")[");
 	        for(ISugiyamaEdge e : vertexToEdges.get(v.getID()).get(1)){
-                out+=e.getID() + ",";
+                out.append(e.getID()).append(",");
             }
-            out = out.substring(0,out.length()-1);
-	        out += "]";
+            out = new StringBuilder(out.substring(0, out.length() - 1));
+	        out.append("]");
             System.out.println(out);
         }
     }

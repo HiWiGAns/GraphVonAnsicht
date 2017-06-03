@@ -68,7 +68,7 @@ public class MethodGraphLayout implements LayoutAlgorithm<MethodGraph> {
 	 */
 	public void layout(MethodGraph graph) {
 		logger.info("Graph before: Vertices: "+graph.getVertexSet().size()+", Edges: "+graph.getEdgeSet().size());
-		graph.invalidateProperties(); //invalidated all saved properties of its data structures
+		graph.invalidateProperties(); //invalidates all saved properties of the methodGraph's data structures that have to be reset before relayouting
 		this.layoutFieldAccessGraphs(graph);
 		List<FieldAccess> collapsedFAs = graph.collapseFieldAccesses();
 		
@@ -144,7 +144,7 @@ public class MethodGraphLayout implements LayoutAlgorithm<MethodGraph> {
 	private void checkIntegrity(FieldAccess fa){
 		FieldAccessGraph fag = fa.getGraph();
 		//assert(dEquals(fa.getX(), fag.getX())); //as the FieldAccess itself is layouted later this is normally not necessary here
-		assert(fa.getSize().equals(fag.getSize()));
+		//assert(fa.getSize().equals(fag.getSize()));  fag calculates size new, might be not optional
 		double faStartX = fa.getX();
 		double faEndX = fa.getX() + fa.getSize().x;
 		double faStartY = fa.getY();
@@ -154,12 +154,12 @@ public class MethodGraphLayout implements LayoutAlgorithm<MethodGraph> {
 		double fagStartY = fag.getY();
 		double fagEndY = fag.getY() + fa.getSize().y;
 
-		System.out.println("FA-Points: X("+faStartX + "|" + faEndX + "), Y(" + faStartY + "|" + faEndY + ")");
-		System.out.println("FAG-Points: X("+fagStartX + "|" + fagEndX + "), Y(" + fagStartY + "|" + fagEndY + ")");
+		//System.out.println("FA-Points: X("+faStartX + "|" + faEndX + "), Y(" + faStartY + "|" + faEndY + ")");
+		//System.out.println("FAG-Points: X("+fagStartX + "|" + fagEndX + "), Y(" + fagStartY + "|" + fagEndY + ")");
 		for(JoanaVertex v : fa.getGraph().getVertexSet()){
-			System.out.println("Vertex-X(" + v.getX() + "|" + (v.getX() + v.getSize().x) + ")");
+			//System.out.println("Vertex-X(" + v.getX() + "|" + (v.getX() + v.getSize().x) + ")");
 			assert(v.getX() > fagStartX && (v.getX() + v.getSize().x) < fagEndX);
-			System.out.println("Vertex-Y(" + v.getY() + "|" + (v.getY() + v.getSize().y) + ")");
+			//System.out.println("Vertex-Y(" + v.getY() + "|" + (v.getY() + v.getSize().y) + ")");
 			assert(v.getY() > fagStartY && (v.getY() + v.getSize().y) < fagEndY);
 		}
 	}

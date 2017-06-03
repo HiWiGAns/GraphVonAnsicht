@@ -1,6 +1,13 @@
 package edu.kit.student.joana.methodgraph;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import edu.kit.student.graphmodel.Edge;
@@ -28,6 +35,7 @@ import edu.kit.student.objectproperty.GAnsProperty;
 import edu.kit.student.plugin.EdgeFilter;
 import edu.kit.student.plugin.LayoutOption;
 import edu.kit.student.plugin.VertexFilter;
+import edu.kit.student.sugiyama.LayoutedGraph;
 import edu.kit.student.util.IntegerPoint;
 import edu.kit.student.util.LanguageManager;
 
@@ -48,6 +56,7 @@ public class MethodGraph extends JoanaGraph {
     private JoanaCollapser collapser;
 
     private Map<Integer, Set<InterproceduralEdge>> interprocEdges = new HashMap<>();
+    private LayoutedGraph layoutedGraph = null;
 
     public MethodGraph(Set<JoanaVertex> vertices, Set<JoanaEdge> edges, 
             String methodName) {
@@ -80,6 +89,29 @@ public class MethodGraph extends JoanaGraph {
      */
     public void invalidateProperties(){
         this.fieldAccesses.forEach(FieldAccess::invalidateGraphProperties);
+    }
+
+    /**
+     * Sets the {@link LayoutedGraph} of this {@link MethodGraph}.
+     * The LayoutedGraph contains layout information about the whole vertices and edges of this MethodGraph.
+     * Note that this can only be done once!
+     *
+     * @param layoutedGraph the given layoutedGraph to be set
+     */
+    public void setLayoutedGraph(LayoutedGraph layoutedGraph){
+        if(layoutedGraph == null)
+            throw new IllegalArgumentException("The given layouted graph must not be null!");
+        if(this.layoutedGraph == null)
+            this.layoutedGraph = layoutedGraph;
+    }
+
+    /**
+     * Gives a representation of the layout of this MethodGraph with all its vertices and edges.
+     *
+     * @return the {@link LayoutedGraph} that represents this MethodGraph
+     */
+    public LayoutedGraph getLayoutedGraph() {
+        return layoutedGraph;
     }
 
     /**

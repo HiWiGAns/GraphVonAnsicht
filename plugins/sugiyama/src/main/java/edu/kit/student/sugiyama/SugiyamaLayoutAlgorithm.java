@@ -45,6 +45,7 @@ public class SugiyamaLayoutAlgorithm<G extends DirectedGraph>
 	private Set<RelativeLayerConstraint> relativeLayerConstraints;
 	private Set<AbsoluteLayerConstraint> absoluteLayerConstraints;
 	private Settings settings;
+	private SugiyamaGraph sugyGraph;
 	
     final Logger logger = LoggerFactory.getLogger(SugiyamaLayoutAlgorithm.class);
 
@@ -59,6 +60,7 @@ public class SugiyamaLayoutAlgorithm<G extends DirectedGraph>
 		this.minimizer = new CrossMinimizer();
 		this.positioner = new VertexPositioner();
 		this.drawer = new EdgeDrawer();
+		this.sugyGraph = null;
 	}
 	//TODO check if it would be wise to set the first steps in the constructor in order to avoid nullpointer exceptions
 	//they can still be replaced in the setter
@@ -126,7 +128,7 @@ public class SugiyamaLayoutAlgorithm<G extends DirectedGraph>
 			return this.settings;
 		}
 		//Needs to be a LinkedHashMap, because the parameters might need to be displayed in a specific order to make sense
-		LinkedHashMap<String, Parameter<?,?>> parameter = new LinkedHashMap<String, Parameter<?,?>>(this.minimizer.getSettings().getParameters());
+		LinkedHashMap<String, Parameter<?,?>> parameter = new LinkedHashMap<>(this.minimizer.getSettings().getParameters());
 
 		Settings  settings = new Settings(parameter);
 		this.settings = settings;
@@ -142,6 +144,7 @@ public class SugiyamaLayoutAlgorithm<G extends DirectedGraph>
 		minimizer.minimizeCrossings(wrappedGraph);
 		positioner.positionVertices(wrappedGraph);
 		drawer.drawEdges(wrappedGraph);
+		this.sugyGraph = wrappedGraph;
 		logger.info("runs in " + ((new Date()).getTime() - timeBefore) + "ms");
     }
 
@@ -158,19 +161,34 @@ public class SugiyamaLayoutAlgorithm<G extends DirectedGraph>
 		positioner.positionVertices(wrappedGraph);
 		logger.info("drawing edges");
 		drawer.drawEdges(wrappedGraph);
+		this.sugyGraph = wrappedGraph;
 	}
 
 
 	/**
 	 * Draws given edges new, also take paths into account.
 	 * Positions of every vertex is set and should not be changed.
+	 * Also assignees every vertex a layer, as well as every vertex in the given paths.
 	 *
 	 * @param vertices given vertices with set coordinates
 	 * @param edges edges that connect vertices of adjacent layers
 	 * @param paths paths describing edges connecting vertices of two not adjacent layers
 	 */
 	public void drawEdgesNew(Set<Vertex> vertices, Set<DirectedEdge> edges, Set<DirectedSupplementEdgePath> paths){
-		SugiyamaGraph sugyGraph = new SugiyamaGraph("",vertices, edges, paths);
+		SugiyamaGraph sugyGraph = new SugiyamaGraph(vertices, edges, paths);
 		drawer.drawEdges(sugyGraph);	//draw edges
+		this.sugyGraph = sugyGraph;
+	}
+
+	/**
+	 * Exports the state of the last layouted {@link SugiyamaGraph} as a {@link LayoutedGraph}.
+	 *
+	 * @return the LayoutedGraph that represents the state of a SugiyamaGraph
+	 */
+	public LayoutedGraph exportLayoutedGraph(){
+		SugiyamaGraph sg = this.sugyGraph;
+		if(sg == null)
+			return null;
+		return new LayoutedGraph(sg.exportVertices(), sg.exportEdges(), sg.exportPaths());
 	}
 }
