@@ -177,11 +177,17 @@ public class MethodGraphLayout implements LayoutAlgorithm<MethodGraph> {
 		Set<DirectedSupplementEdgePath> paths = lg.getPaths();
 
 		//remove interprocedural edges from edgeset and their dummies from vertex set
+		graph.removeInterproceduralEdges();
+
 		//(fieldAccesses should still be collapsed ???) so filter in the fieldAccesses and relayout the edges in there!
+		List<FieldAccess> fas = graph.getFieldAccesses(); //FieldAccesses should be already collapsed at this moment.
+		fas.forEach(fa->drawEdgesNew(graph,fa)); //like in this.layout(). Normally applies filtering automatically
 
 		//call drawEdgesNew with vertices, edges, paths
+		this.sugiyamaLayoutAlgorithm.drawEdgesNew(vertices, edges, paths);
 
 		//draw the not filtered ie's new,(let the dummies even if the edges are filtered!?!)TODO: ALWAYS let the dummies of an interprocedural edge even the edge itself is filtered!!!
+		drawInterproceduralEdges(graph);
 	}
 	
 	/**
@@ -575,10 +581,10 @@ public class MethodGraphLayout implements LayoutAlgorithm<MethodGraph> {
 			vertices.add(edge.getTarget());
 		}
 		for(DirectedSupplementEdgePath p : paths){
-			vertices.addAll(p.getDummyVertices());
+			//vertices.addAll(p.getDummyVertices());
 			vertices.add(p.getReplacedEdge().getSource());
 			vertices.add(p.getReplacedEdge().getTarget());
-			edges.addAll(p.getSupplementEdges());
+			//edges.addAll(p.getSupplementEdges());
 			edges.remove(p.getReplacedEdge());//should not be in here !
 		}
 		this.sugiyamaLayoutAlgorithm.drawEdgesNew(vertices, edges, paths);

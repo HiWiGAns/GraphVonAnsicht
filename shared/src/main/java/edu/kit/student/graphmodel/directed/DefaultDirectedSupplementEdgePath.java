@@ -40,6 +40,9 @@ public class DefaultDirectedSupplementEdgePath implements DirectedSupplementEdge
 	
 	//just for testing the path 
 	private void testSupplementPath(){
+		assert(!dummies.isEmpty());
+		assert(!supplementEdges.isEmpty());
+		assert(dummies.size() == supplementEdges.size() - 1);
 		assert(this.supplementEdges.get(0).getSource().getID().equals(this.replacedEdge.getSource().getID()));
 		assert(this.supplementEdges.get(this.supplementEdges.size() - 1).getTarget().getID().equals(this.replacedEdge.getTarget().getID()));
 		for(int i = 0; i < this.supplementEdges.size() - 1; i++){

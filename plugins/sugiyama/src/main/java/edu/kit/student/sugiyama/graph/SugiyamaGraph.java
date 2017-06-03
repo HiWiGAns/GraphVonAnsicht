@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.Vector;
+import java.util.stream.Collectors;
 
 import edu.kit.student.graphmodel.DefaultGraphLayering;
 import edu.kit.student.graphmodel.DefaultVertex;
@@ -19,6 +20,7 @@ import edu.kit.student.graphmodel.EdgePath;
 import edu.kit.student.graphmodel.FastGraphAccessor;
 import edu.kit.student.graphmodel.OrthogonalEdgePath;
 import edu.kit.student.graphmodel.Vertex;
+import edu.kit.student.graphmodel.directed.DefaultDirectedEdge;
 import edu.kit.student.graphmodel.directed.DefaultDirectedGraph;
 import edu.kit.student.graphmodel.directed.DefaultDirectedSupplementEdgePath;
 import edu.kit.student.graphmodel.directed.DirectedEdge;
@@ -270,13 +272,40 @@ public class SugiyamaGraph
 	public Set<DirectedSupplementEdgePath> exportPaths(){
 		Set<DirectedSupplementEdgePath> paths = new HashSet<>();
 		for(SupplementPath p : this.getSupplementPaths()){
-			List<Vertex> dummies = new LinkedList<>();
-			List<DirectedEdge> suppEdges = new LinkedList<>();
-			p.getDummyVertices().forEach(v->dummies.add(v.getVertex()));
-			p.getSupplementEdges().forEach(e->suppEdges.add(e.getWrappedEdge()));
-			paths.add(new DefaultDirectedSupplementEdgePath(p.getReplacedEdge().getWrappedEdge(), dummies, suppEdges));
+			//printPath(p);
+			List<Vertex> newDummies = new LinkedList<>();
+			List<DirectedEdge> newSuppEdges = new LinkedList<>();
+			DirectedEdge wrappedEdge = p.getReplacedEdge().getWrappedEdge();
+			List<ISugiyamaVertex> dummies = p.getDummyVertices().stream().filter(ISugiyamaVertex::isDummy).collect(Collectors.toList());
+			List<ISugiyamaEdge> suppEdges = p.getSupplementEdges();
+			System.out.println("orig dummies: " + dummies.size() + ", orig supp edges: " + suppEdges.size());
+
+			newDummies.addAll(dummies);
+			newSuppEdges.add(new DefaultDirectedEdge<>("","", wrappedEdge.getSource(), newDummies.get(0)));
+			for(int i = 1; i < suppEdges.size() - 1; i++){					//TODO: same for suppEdges.getWrappedEdge == null !!!
+				newSuppEdges.add(suppEdges.get(i));
+			}
+			newSuppEdges.add(new DefaultDirectedEdge<>("","", newDummies.get(newDummies.size() - 1), wrappedEdge.getTarget()));
+			paths.add(new DefaultDirectedSupplementEdgePath(wrappedEdge , newDummies, newSuppEdges));
 		}
 		return paths;
+	}
+
+	private void printPath(SupplementPath p){
+		StringBuilder out = new StringBuilder("");
+		ISugiyamaEdge replacedEdge = p.getReplacedEdge();
+		DirectedEdge wrappedEdge = p.getReplacedEdge().getWrappedEdge();
+		System.out.println("wrapped edge: " + wrappedEdge.toString());
+		System.out.println("replaced edge: " + replacedEdge.toString());
+		List<ISugiyamaVertex> dummies = p.getDummyVertices();
+		List<ISugiyamaEdge> suppEdges = p.getSupplementEdges();
+		out.append("dummies: ");
+		dummies.forEach(d -> out.append(d.getID()).append(", "));
+		System.out.println(out);
+		out.setLength(0);
+		out.append("supp edges: ");
+		suppEdges.forEach(s -> out.append(s.toString()).append(", "));
+		System.out.println(out);
 	}
 
 
@@ -494,6 +523,7 @@ public class SugiyamaGraph
 			this.replacedEdge = replacedEdge;
 			this.dummies = dummies;
 			this.supplementEdges = supplementEdges;
+			assert(dummies.size() == supplementEdges.size() - 1);
 		}
 
 		/**
