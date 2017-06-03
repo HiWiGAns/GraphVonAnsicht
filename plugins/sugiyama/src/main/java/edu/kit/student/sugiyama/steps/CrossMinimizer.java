@@ -145,7 +145,6 @@ public class CrossMinimizer implements ICrossMinimizer {
 			return this.settings;
 		}
 
-
 		LinkedList<Parameter<?>> parameter = new LinkedList<>();
 		parameter.add(stopOnThresholdParam);
 		parameter.add(thresholdParam);

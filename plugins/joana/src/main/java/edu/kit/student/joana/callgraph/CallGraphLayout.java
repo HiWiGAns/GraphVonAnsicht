@@ -8,7 +8,7 @@ import edu.kit.student.sugiyama.SugiyamaLayoutAlgorithm;
  * Offers a layout for {@link CallGraph}.
  * Groups vertices representing the same Java-Method together.
  */
-public class CallGraphLayout implements LayoutAlgorithm<CallGraph> {
+public class CallGraphLayout extends LayoutAlgorithm<CallGraph> {
 	private SugiyamaLayoutAlgorithm<CallGraph> sugiyamaLayoutAlgorithm;
 
 	public CallGraphLayout() {

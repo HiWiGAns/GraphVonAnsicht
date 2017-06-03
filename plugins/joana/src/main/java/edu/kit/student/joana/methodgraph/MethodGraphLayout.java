@@ -1,5 +1,35 @@
 package edu.kit.student.joana.methodgraph;
 
+import edu.kit.student.graphmodel.DefaultVertex;
+import edu.kit.student.graphmodel.DirectedSupplementEdgePath;
+import edu.kit.student.graphmodel.EdgePath;
+import edu.kit.student.graphmodel.FastGraphAccessor;
+import edu.kit.student.graphmodel.Vertex;
+import edu.kit.student.graphmodel.directed.DefaultDirectedEdge;
+import edu.kit.student.graphmodel.directed.DefaultDirectedSupplementEdgePath;
+import edu.kit.student.graphmodel.directed.DirectedEdge;
+import edu.kit.student.joana.FieldAccess;
+import edu.kit.student.joana.FieldAccessGraph;
+import edu.kit.student.joana.InterproceduralEdge;
+import edu.kit.student.joana.JoanaEdge;
+import edu.kit.student.joana.JoanaVertex;
+import edu.kit.student.objectproperty.GAnsProperty;
+import edu.kit.student.parameter.Settings;
+import edu.kit.student.plugin.EdgeFilter;
+import edu.kit.student.plugin.LayoutAlgorithm;
+import edu.kit.student.plugin.VertexFilter;
+import edu.kit.student.sugiyama.AbsoluteLayerConstraint;
+import edu.kit.student.sugiyama.LayerContainsOnlyConstraint;
+import edu.kit.student.sugiyama.LayoutedGraph;
+import edu.kit.student.sugiyama.RelativeLayerConstraint;
+import edu.kit.student.sugiyama.SugiyamaLayoutAlgorithm;
+import edu.kit.student.sugiyama.steps.LayerAssigner;
+import edu.kit.student.util.DoublePoint;
+import edu.kit.student.util.IntegerPoint;
+import javafx.scene.paint.Color;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -12,43 +42,12 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import edu.kit.student.graphmodel.DefaultVertex;
-import edu.kit.student.joana.InterproceduralEdge;
-import edu.kit.student.plugin.EdgeFilter;
-import edu.kit.student.plugin.VertexFilter;
-import edu.kit.student.sugiyama.LayoutedGraph;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import edu.kit.student.graphmodel.DirectedSupplementEdgePath;
-import edu.kit.student.graphmodel.EdgePath;
-import edu.kit.student.graphmodel.FastGraphAccessor;
-import edu.kit.student.graphmodel.Vertex;
-import edu.kit.student.graphmodel.directed.DefaultDirectedEdge;
-import edu.kit.student.graphmodel.directed.DefaultDirectedSupplementEdgePath;
-import edu.kit.student.graphmodel.directed.DirectedEdge;
-import edu.kit.student.joana.FieldAccess;
-import edu.kit.student.joana.FieldAccessGraph;
-import edu.kit.student.joana.JoanaEdge;
-import edu.kit.student.joana.JoanaVertex;
-import edu.kit.student.objectproperty.GAnsProperty;
-import edu.kit.student.parameter.Settings;
-import edu.kit.student.plugin.LayoutAlgorithm;
-import edu.kit.student.sugiyama.AbsoluteLayerConstraint;
-import edu.kit.student.sugiyama.LayerContainsOnlyConstraint;
-import edu.kit.student.sugiyama.RelativeLayerConstraint;
-import edu.kit.student.sugiyama.SugiyamaLayoutAlgorithm;
-import edu.kit.student.sugiyama.steps.LayerAssigner;
-import edu.kit.student.util.DoublePoint;
-import edu.kit.student.util.IntegerPoint;
-import javafx.scene.paint.Color;
-
 
 /**
  * Implements hierarchical layout with layers for {@link MethodGraph}.
  * This graph contains field access subgraphs.
  */
-public class MethodGraphLayout implements LayoutAlgorithm<MethodGraph> {
+public class MethodGraphLayout extends LayoutAlgorithm<MethodGraph> {
 	
     private final Logger logger = LoggerFactory.getLogger(MethodGraphLayout.class);
 	private SugiyamaLayoutAlgorithm<MethodGraph> sugiyamaLayoutAlgorithm;

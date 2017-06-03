@@ -85,10 +85,16 @@ public class ParameterDialogGenerator extends ParameterVisitor {
 		for (Parameter<?> p : parameters) {
 			p.accept(this);
 		}
+		// If there are parameters before the sub setting, save some extra space
+		boolean first = !parameters.isEmpty();
 		for (Settings subSetting : settings.getSubSettings()) {
 			ParameterDialogGenerator subgen = new ParameterDialogGenerator(subSetting);
 			Pane pane = new BorderedPane(subgen.build(), new Label(subSetting.getName()));
 			GridPane.setColumnSpan(pane, GridPane.REMAINING);
+			if (first) {
+				GridPane.setMargin(pane, new Insets(10, 0, 10, 0));
+				first = false;
+			}
 			grid.add(pane, 0, rowPointer++);
 		}
 		return grid;
@@ -100,6 +106,7 @@ public class ParameterDialogGenerator extends ParameterVisitor {
 		CheckBox box = new CheckBox(parameter.getName());
 		box.setSelected(parameter.getValue());
 		parameter.propertyValue().bind(box.selectedProperty());
+		box.disableProperty().bind(parameter.disabledProperty());
 		parameter.cacheCurrentValue();
 
 		grid.add(box, 0, rowPointer++);
@@ -113,8 +120,8 @@ public class ParameterDialogGenerator extends ParameterVisitor {
 		factory.setConverter(this.intConverter);
 
 		Spinner<Integer> spinner = new Spinner<>(factory);
-		spinner.setEditable(true);
 		parameter.propertyValue().bind(spinner.valueProperty());
+		spinner.disableProperty().bind(parameter.disabledProperty());
 		parameter.cacheCurrentValue();
 
 		grid.add(new Text(parameter.getName()), 0, rowPointer);
@@ -130,8 +137,8 @@ public class ParameterDialogGenerator extends ParameterVisitor {
 		factory.setConverter(this.doubleConverter);
 
 		Spinner<Double> spinner = new Spinner<>(factory);
-		spinner.setEditable(true);
 		parameter.propertyValue().bind(spinner.valueProperty());
+		spinner.disableProperty().bind(parameter.disabledProperty());
 		parameter.cacheCurrentValue();
 
 		grid.add(new Text(parameter.getName()), 0, rowPointer);
@@ -142,6 +149,7 @@ public class ParameterDialogGenerator extends ParameterVisitor {
 	public void visit(StringParameter parameter) {
 		TextField field = new TextField(parameter.getValue());
 		parameter.propertyValue().bind(field.textProperty());
+		field.disableProperty().bind(parameter.disabledProperty());
 		parameter.cacheCurrentValue();
 
 		grid.add(new Text(parameter.getName()), 0, rowPointer);
@@ -171,6 +179,7 @@ public class ParameterDialogGenerator extends ParameterVisitor {
 		});
 		cmb.getSelectionModel().select(parameter.getSelectedIndex());
 		parameter.propertyValue().bind(cmb.valueProperty());
+		cmb.disableProperty().bind(parameter.disabledProperty());
 		parameter.cacheCurrentValue();
 
 		grid.add(cmb, 1, rowPointer++);

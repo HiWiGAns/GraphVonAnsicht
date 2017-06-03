@@ -6,7 +6,7 @@ import edu.kit.student.parameter.Settings;
 
 public class SugiyamaLayoutOption extends DirectedGraphLayoutOption {
 	
-	SugiyamaLayoutAlgorithm<? extends DirectedGraph> algo;
+	private SugiyamaLayoutAlgorithm<? extends DirectedGraph> algo;
 
 	public SugiyamaLayoutOption() {
 		this.setName("Sugiyama-Layout");

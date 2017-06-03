@@ -1,6 +1,8 @@
 package edu.kit.student.parameter;
 
 import edu.kit.student.objectproperty.GAnsProperty;
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.value.ChangeListener;
 
 /**
@@ -20,6 +22,9 @@ import javafx.beans.value.ChangeListener;
 public abstract class Parameter<V> extends GAnsProperty<V> implements ReadOnlyParameter<V> {
 	
 	private V tempValue;
+
+
+	private final BooleanProperty disabled = new SimpleBooleanProperty(false);
 	
 	/**
 	 * Constructor, setting the name and value of the property.
@@ -48,7 +53,7 @@ public abstract class Parameter<V> extends GAnsProperty<V> implements ReadOnlyPa
     public void cacheCurrentValue() {
     	tempValue = this.getValue();
     }
-    
+
     /**
      * Sets the value of the parameter to the value cached via cacheCurrentValue().
      * If no value is cached, the initial value of the parameter is set.
@@ -56,4 +61,21 @@ public abstract class Parameter<V> extends GAnsProperty<V> implements ReadOnlyPa
     public void reset() {
     	this.setValue(tempValue);
     }
+
+	@Override
+	public boolean isDisabled() {
+        return disabled.getValue();
+	}
+
+	/**
+	 * Sets the binary state controlling if this parameter should be enabled.
+	 * @param enabled true if this parameter should be enabled, false otherwise
+	 */
+	public void setDisabled(boolean enabled) {
+	    this.disabled.setValue(enabled);
+	}
+
+	public BooleanProperty disabledProperty() {
+		return disabled;
+	}
 }

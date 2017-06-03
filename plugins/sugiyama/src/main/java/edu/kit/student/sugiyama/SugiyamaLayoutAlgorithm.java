@@ -20,12 +20,14 @@ import edu.kit.student.sugiyama.steps.ILayerAssigner;
 import edu.kit.student.sugiyama.steps.IVertexPositioner;
 import edu.kit.student.sugiyama.steps.LayerAssigner;
 import edu.kit.student.sugiyama.steps.VertexPositioner;
+import edu.kit.student.util.LanguageManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Date;
 import java.util.HashSet;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -34,8 +36,8 @@ import java.util.Set;
  * Additionally this class tries to follow the given constraints, if possible.
  * @param <G> 
  */
-public class SugiyamaLayoutAlgorithm<G extends DirectedGraph> 
-	implements LayoutAlgorithm<G> {
+public class SugiyamaLayoutAlgorithm<G extends DirectedGraph> extends LayoutAlgorithm<G> {
+
 	private ICycleRemover remover;
 	private ILayerAssigner assigner;
 	private ICrossMinimizer minimizer;
@@ -43,10 +45,10 @@ public class SugiyamaLayoutAlgorithm<G extends DirectedGraph>
 	private IEdgeDrawer drawer;
 	private Set<RelativeLayerConstraint> relativeLayerConstraints;
 	private Set<AbsoluteLayerConstraint> absoluteLayerConstraints;
-	private Settings settings;
+	private final Settings settings;
 	private SugiyamaGraph sugyGraph;
 	
-    final Logger logger = LoggerFactory.getLogger(SugiyamaLayoutAlgorithm.class);
+    private final Logger logger = LoggerFactory.getLogger(SugiyamaLayoutAlgorithm.class);
 
 	/**
 	 * Creates a SugiyamaLayoutAlgorithm
@@ -60,10 +62,12 @@ public class SugiyamaLayoutAlgorithm<G extends DirectedGraph>
 		this.positioner = new VertexPositioner();
 		this.drawer = new EdgeDrawer();
 		this.sugyGraph = null;
+
+		settings = super.getSettings();
+		Settings sugiyamaSettings = new Settings(LanguageManager.getInstance().get("sugiyama_algo"), getParameters());
+		sugiyamaSettings.addSubSetting(minimizer.getSettings());
+		settings.addSubSetting(sugiyamaSettings);
 	}
-	//TODO check if it would be wise to set the first steps in the constructor in order to avoid nullpointer exceptions
-	//they can still be replaced in the setter
-	
 
 	/**
 	 * Sets the algorithm to remove all cycles for a graph to layout used when applying the layout
@@ -123,14 +127,11 @@ public class SugiyamaLayoutAlgorithm<G extends DirectedGraph>
 
 	@Override
 	public Settings getSettings() {
-		if (this.settings != null) {
-			return this.settings;
-		}
-		LinkedList<Parameter<?>> parameter = new LinkedList<>();
+	    return this.settings;
+	}
 
-		settings = new Settings("Sugiyama-Layout", parameter);
-		settings.addSubSetting(minimizer.getSettings());
-		return settings;
+	private List<Parameter<?>> getParameters() {
+		return new LinkedList<>();
 	}
 
     @Override

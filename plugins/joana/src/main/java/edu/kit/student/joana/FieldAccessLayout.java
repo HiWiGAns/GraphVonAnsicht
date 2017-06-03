@@ -6,7 +6,7 @@ import edu.kit.student.plugin.LayoutAlgorithm;
 /**
  * The FieldAccessLayout applies its layout to a {@link FieldAccess}.
  */
-public class FieldAccessLayout implements LayoutAlgorithm<FieldAccessGraph> {
+public class FieldAccessLayout extends LayoutAlgorithm<FieldAccessGraph> {
 
 	@Override
 	public Settings getSettings() {
