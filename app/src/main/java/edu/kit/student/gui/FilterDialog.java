@@ -17,17 +17,9 @@ import javafx.scene.control.ScrollPane;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
 import javafx.scene.image.Image;
-import javafx.scene.layout.Border;
-import javafx.scene.layout.BorderStroke;
-import javafx.scene.layout.BorderStrokeStyle;
-import javafx.scene.layout.BorderWidths;
-import javafx.scene.layout.CornerRadii;
 import javafx.scene.layout.Pane;
-import javafx.scene.layout.Region;
-import javafx.scene.layout.StackPane;
 import javafx.scene.layout.TilePane;
 import javafx.scene.layout.VBox;
-import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -209,41 +201,8 @@ public class FilterDialog extends Dialog<ButtonType> {
             tilePane.getChildren().add(box);
         }
 
-        return createBorderedGroup(tilePane, groupCheckBox);
+        return new BorderedPane(tilePane, groupCheckBox);
     }
-
-    private Pane createBorderedGroup(Node content, Region inTitle) {
-
-        StackPane pane = new StackPane() {
-
-            private final static int CheckBoxPadding = 4;
-
-            {
-                getChildren().add(content);
-                inTitle.setPadding(new Insets(0, 0, 0, CheckBoxPadding));
-                inTitle.setStyle("-fx-background-color: -fx-background");
-                getChildren().add(inTitle);
-            }
-
-            @Override
-            protected void layoutChildren() {
-                super.layoutChildren();
-                final double groupCbHeight = inTitle.prefHeight(-1);
-                final double groupCbWidth = inTitle.prefWidth(groupCbHeight) + CheckBoxPadding;
-                inTitle.resize(groupCbWidth, groupCbHeight);
-
-                // Move checkbox a bit right from the top left corner
-                inTitle.relocate(CheckBoxPadding * 2, -groupCbHeight / 2.0 - 1);
-            }
-        };
-        pane.setPadding(new Insets(10, 0, 10, 0));
-        pane.setBorder(new Border(new BorderStroke(Color.GRAY, BorderStrokeStyle.SOLID,
-                new CornerRadii(4), new BorderWidths(1))));
-
-        return pane;
-    }
-
-
 
     private class FilterGroup {
 

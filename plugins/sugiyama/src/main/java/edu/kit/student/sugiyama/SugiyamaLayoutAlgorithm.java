@@ -126,11 +126,10 @@ public class SugiyamaLayoutAlgorithm<G extends DirectedGraph>
 		if (this.settings != null) {
 			return this.settings;
 		}
-		//Needs to be a LinkedHashMap, because the parameters might need to be displayed in a specific order to make sense
-		LinkedList<Parameter<?,?>> parameter = new LinkedList<>(this.minimizer.getSettings().getParameters());
+		LinkedList<Parameter<?,?>> parameter = new LinkedList<>();
 
-		Settings settings = new Settings("Sugiyama-Layout", parameter);
-		this.settings = settings;
+		settings = new Settings("Sugiyama-Layout", parameter);
+		settings.addSubSetting(minimizer.getSettings());
 		return settings;
 	}
 

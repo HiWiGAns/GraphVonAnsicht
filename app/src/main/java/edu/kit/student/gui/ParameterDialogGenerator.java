@@ -10,11 +10,13 @@ import edu.kit.student.parameter.Settings;
 import edu.kit.student.parameter.StringParameter;
 import edu.kit.student.util.LanguageManager;
 import javafx.geometry.Insets;
+import javafx.scene.Node;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
+import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.control.Spinner;
@@ -23,6 +25,7 @@ import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.Pane;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
 import javafx.stage.Window;
@@ -33,7 +36,6 @@ import java.text.DecimalFormat;
 import java.text.ParseException;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Optional;
 
 /**
  * Generates a parameter dialog given a parent node and a set of parameters.
@@ -41,36 +43,57 @@ import java.util.Optional;
  * @author Lucas Steinmann
  */
 public class ParameterDialogGenerator extends ParameterVisitor {
-	private GridPane parent;
-	private int parameterCount = 0;
+
+	private GridPane grid;
+	private int rowPointer = 0;
 
 	private StringConverter<Integer> intConverter;
 	private StringConverter<Double> doubleConverter;
 
 	private List<Parameter<?, ?>> parameters;
+	private Settings settings;
 
 	/**
-	 * Constructs a new ParameterDialogGenerator and sets the parent, where all
-	 * parameter GUI-Elements are placed in afterwards.
-	 * 
-	 * @param parent 
-	 * @param settings
+	 * Constructs a new ParameterDialogGenerator, and sets the settings
+	 * which should are used as model for the GUI.
+	 *
+	 * @param settings the settings to generate the GUI from
 	 */
-	public ParameterDialogGenerator(GridPane parent, Settings settings) {
-		this.parent = parent;
-		parent.setHgap(10);
-		parent.setVgap(10);
-		parent.setPadding(new Insets(10, 20, 10, 10));
+	public ParameterDialogGenerator(Settings settings) {
+	    this.parameters = settings.getParameters();
+	    this.settings = settings;
+	}
+
+	public Node build() {
+		grid = new GridPane();
+		grid.setHgap(10);
+		grid.setVgap(10);
+		grid.setPadding(new Insets(10, 20, 10, 10));
+
+		ColumnConstraints c1 = new ColumnConstraints();
+		ColumnConstraints c2 = new ColumnConstraints();
+		c1.setPercentWidth(50);
+		c2.setPercentWidth(50);
+		grid.getColumnConstraints().add(c1);
+		grid.getColumnConstraints().add(c2);
 
 		this.initIntConverter();
 		this.initDoubleConverter();
 
-		parameters = new LinkedList<Parameter<?, ?>>(settings.getParameters());
+		parameters = new LinkedList<>(settings.getParameters());
 
 		for (Parameter<?, ?> p : parameters) {
 			p.accept(this);
 		}
+		for (Settings subSetting : settings.getSubSettings()) {
+			ParameterDialogGenerator subgen = new ParameterDialogGenerator(subSetting);
+			Pane pane = new BorderedPane(subgen.build(), new Label(subSetting.getName()));
+			GridPane.setColumnSpan(pane, GridPane.REMAINING);
+			grid.add(pane, 0, rowPointer++);
+		}
+		return grid;
 	}
+
 
 	@Override
 	public void visit(BooleanParameter parameter) {
@@ -79,8 +102,7 @@ public class ParameterDialogGenerator extends ParameterVisitor {
 		parameter.propertyValue().bind(box.selectedProperty());
 		parameter.cacheCurrentValue();
 
-		parent.add(box, 0, parameterCount);
-		parameterCount++;
+		grid.add(box, 0, rowPointer++);
 	}
 
 	@Override
@@ -90,14 +112,13 @@ public class ParameterDialogGenerator extends ParameterVisitor {
 		
 		factory.setConverter(this.intConverter);
 
-		Spinner<Integer> spinner = new Spinner<Integer>(factory);
+		Spinner<Integer> spinner = new Spinner<>(factory);
 		spinner.setEditable(true);
 		parameter.propertyValue().bind(spinner.valueProperty());
 		parameter.cacheCurrentValue();
 
-		parent.add(new Text(parameter.getName()), 0, parameterCount);
-		parent.add(spinner, 1, parameterCount);
-		parameterCount++;
+		grid.add(new Text(parameter.getName()), 0, rowPointer);
+		grid.add(spinner, 1, rowPointer++);
 	}
 
 	@Override
@@ -108,14 +129,13 @@ public class ParameterDialogGenerator extends ParameterVisitor {
 
 		factory.setConverter(this.doubleConverter);
 
-		Spinner<Double> spinner = new Spinner<Double>(factory);
+		Spinner<Double> spinner = new Spinner<>(factory);
 		spinner.setEditable(true);
 		parameter.propertyValue().bind(spinner.valueProperty());
 		parameter.cacheCurrentValue();
 
-		parent.add(new Text(parameter.getName()), 0, parameterCount);
-		parent.add(spinner, 1, parameterCount);
-		parameterCount++;
+		grid.add(new Text(parameter.getName()), 0, rowPointer);
+		grid.add(spinner, 1, rowPointer++);
 	}
 
 	@Override
@@ -124,15 +144,14 @@ public class ParameterDialogGenerator extends ParameterVisitor {
 		parameter.propertyValue().bind(field.textProperty());
 		parameter.cacheCurrentValue();
 
-		parent.add(new Text(parameter.getName()), 0, parameterCount);
-		parent.add(field, 1, parameterCount);
-		parameterCount++;
+		grid.add(new Text(parameter.getName()), 0, rowPointer);
+		grid.add(field, 1, rowPointer++);
 	}
 
 	@Override
 	public void visit(MultipleChoiceParameter parameter) {
-		parent.add(new Text(parameter.getName()), 0, parameterCount);
-		ComboBox<String> cmb = new ComboBox<String>();
+		grid.add(new Text(parameter.getName()), 0, rowPointer);
+		ComboBox<String> cmb = new ComboBox<>();
 		cmb.getItems().addAll(parameter.getChoices());
 
 		cmb.setCellFactory(new Callback<ListView<String>, ListCell<String>>() {
@@ -154,8 +173,7 @@ public class ParameterDialogGenerator extends ParameterVisitor {
 		parameter.propertyValue().bind(cmb.valueProperty());
 		parameter.cacheCurrentValue();
 
-		parent.add(cmb, 1, parameterCount);
-		parameterCount++;
+		grid.add(cmb, 1, rowPointer++);
 	}
 
 	/**
@@ -171,24 +189,21 @@ public class ParameterDialogGenerator extends ParameterVisitor {
 			// automatically be accepted
 			return true;
 		} else {
-			GridPane root = new GridPane();
-			ColumnConstraints c1 = new ColumnConstraints();
-			ColumnConstraints c2 = new ColumnConstraints();
-			c1.setPercentWidth(50);
-			c2.setPercentWidth(50);
-			root.getColumnConstraints().add(c1);
-			root.getColumnConstraints().add(c2);
-			ParameterDialogGenerator gen = new ParameterDialogGenerator(root, settings);
 			Alert dialog = new Alert(AlertType.CONFIRMATION);
+
+			ParameterDialogGenerator gen = new ParameterDialogGenerator(settings);
+			dialog.getDialogPane().setContent(gen.build());
+
 			dialog.initOwner(owner);
-			dialog.setTitle(LanguageManager.getInstance().get("wind_prop_title"));
+			dialog.setTitle(LanguageManager.getInstance().get("wind_prop_title") + ": " + settings.getName());
 			dialog.setHeaderText(null);
 			dialog.setGraphic(null);
+
 			Stage stage = (Stage) dialog.getDialogPane().getScene().getWindow();
 	    	stage.getIcons().add(new Image("gans_icon.png"));
-			dialog.getDialogPane().setContent(root);
-			Optional<ButtonType> result = dialog.showAndWait();
-			if (result.get() != ButtonType.OK) {
+
+			ButtonType result = dialog.showAndWait().orElse(ButtonType.CANCEL);
+			if (result != ButtonType.OK) {
 				gen.resetParameters();
 				return false;
 			}

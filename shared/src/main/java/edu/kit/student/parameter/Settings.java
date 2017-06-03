@@ -1,11 +1,7 @@
 package edu.kit.student.parameter;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 /**
  * A compound object to store parameters.
@@ -14,8 +10,9 @@ import java.util.Set;
  */
 public class Settings {
 
-    private final Map<String, Parameter<?,?>> parameters;
-    private final Map<String, Settings> subSettings;
+    private final List<Parameter<?,?>> parameters;
+
+    private final List<Settings> subSettings;
 
     private String name;
 
@@ -25,10 +22,8 @@ public class Settings {
      */
     public Settings(String name, List<Parameter<?,?>> parameters) {
         this.name = name;
-        this.parameters = new HashMap<>();
-        this.subSettings = new HashMap<>();
-        for (Parameter<?, ?> parameter : parameters)
-            this.parameters.put(parameter.getName(), parameter);
+        this.parameters = new LinkedList<>(parameters);
+        this.subSettings = new LinkedList<>();
     }
 
     /**
@@ -36,11 +31,11 @@ public class Settings {
      * @return the amount of parameters in the Settings
      */
     public int size() {
-        return parameters.size();
+        return parameters.size() + subSettings.size();
     }
 
     public boolean isEmpty() {
-        return parameters.isEmpty() && subSettings.values().stream().allMatch(Settings::isEmpty);
+        return parameters.isEmpty() && subSettings.stream().allMatch(Settings::isEmpty);
     }
 
     /**
@@ -49,7 +44,7 @@ public class Settings {
      * @return the Parameter associated with the given key
      */
     public Parameter<?,?> get(String key) {
-        return parameters.get(key);
+        return parameters.stream().filter(p -> p.getName().equals(key)).findFirst().orElse(null);
     }
 
     public static double unpackDouble(Parameter<?, Double> parameter) {
@@ -65,19 +60,20 @@ public class Settings {
     }
 
     /**
-     * Returns all the Parameters in the Settings object.
-     * @return all the Parameters in the Settings object.
+     * Returns all Parameters in the Settings object.
+     * @return all Parameters in the Settings object.
      */
-    public Collection<Parameter<?,?>> getParameters() {
-        Set<Parameter<?, ?>> parameters = new HashSet<>();
-        parameters.addAll(this.parameters.values());
-        for (Settings set : subSettings.values())
-            parameters.addAll(set.getParameters());
-        return parameters;
+    public List<Parameter<?,?>> getParameters() {
+        return new LinkedList<>(parameters);
     }
 
     public boolean containsParameter(String name) {
-        return parameters.containsKey(name) || subSettings.values().stream().anyMatch(s -> s.containsParameter(name));
+        return parameters.stream().anyMatch(p -> p.getName().equals(name));
+    }
+
+    public boolean containsParameterRecursively(String name) {
+        return containsParameter(name)
+                || subSettings.stream().anyMatch(s -> s.containsParameterRecursively(name));
     }
 
     public String getName() {
@@ -89,7 +85,10 @@ public class Settings {
     }
 
     public void addSubSetting(Settings settings) {
-        this.subSettings.put(settings.getName(), settings);
+        subSettings.add(settings);
     }
 
+    public List<Settings> getSubSettings() {
+        return subSettings;
+    }
 }
