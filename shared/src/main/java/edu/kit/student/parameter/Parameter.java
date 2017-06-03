@@ -1,15 +1,23 @@
 package edu.kit.student.parameter;
 
 import edu.kit.student.objectproperty.GAnsProperty;
+import javafx.beans.value.ChangeListener;
 
 /**
  * An abstract parameter class.
- * A Parameter contains a value and a name. The value can be transformed into a string.
- * Clients can set Listeners to track changes of the value.
- * Classes inheriting from this class can visited by a ParameterVisitor.
+ * A parameter contains a value and a name.
+ * Clients can set {@link ChangeListener} to track changes of the value.
+ *
+ * <p>
+ * Classes inheriting from this class can be visited by a ParameterVisitor.
+ * This enables an iteration over a set of variable parameters, while being able
+ * to handle each parameter type adequately.
+ * </p>
+ *
  * @param <V> the type of the value of the parameter
+ * @author Lucas Steinmann, Nicolas Boltz
  */
-public abstract class Parameter<V> extends GAnsProperty<V> {
+public abstract class Parameter<V> extends GAnsProperty<V> implements ReadOnlyParameter<V> {
 	
 	private V tempValue;
 	
@@ -25,13 +33,13 @@ public abstract class Parameter<V> extends GAnsProperty<V> {
 		super(name, value);
 		tempValue = value;
 	}
-    
-    /**
-     * Let the visitor visit this parameter.
-     * @param visitor The visitor to visit
-     */
-    public abstract void accept(ParameterVisitor visitor);
-    
+
+	/**
+	 * Let the visitor visit this parameter.
+	 * @param visitor The visitor to visit
+	 */
+	public abstract void accept(ParameterVisitor visitor);
+
     /**
      * Caches the current value in a variable.
      * This has to be called before reset() is called, 

@@ -28,6 +28,7 @@ public class DoubleParameter extends Parameter<Double> {
 		visitor.visit(this);
 	}
 
+
 	/**
 	 * Returns the minimum boundary.
 	 * @return The minimum boundary.

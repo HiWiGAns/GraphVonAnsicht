@@ -16,6 +16,7 @@ import java.util.List;
  *
  */
 public abstract class LayoutOption extends EntryPointOption implements Cloneable {
+
     /**
      * This should execute the layout on the graph, which should be
      * specified on construction, or in beforehand.
@@ -35,8 +36,21 @@ public abstract class LayoutOption extends EntryPointOption implements Cloneable
         parameters.add(new BooleanParameter(LanguageManager.getInstance().get("fix_vpos"), false));
         return new Settings(LanguageManager.getInstance().get("general"), parameters);
     }
-    
-    
+
+    /**
+     * Returns true if this {@link LayoutAlgorithm} can take a graph with fixed vertex position and only
+     * layout edges.
+     * <p>
+     * Returns true by default.
+     * If a {@link LayoutAlgorithm} can not layout a graph without changing it's vertices positions
+     * it should override this method and return false.
+     * </p>
+     * @return true if this algorithm can just optimize edges
+     */
+    public boolean canOptimizeEdges() {
+        return true;
+    }
+
     /**
      * Called when this layout option is chosen.
      * This allows the layout option to prepare the actual LayoutAlgorithm.

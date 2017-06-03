@@ -19,7 +19,7 @@ import java.lang.ref.WeakReference;
  * 
  * @author Nicolas
  */
-public class GAnsProperty<T> {
+public class GAnsProperty<T> implements ReadOnlyGAnsProperty<T> {
 
 	/**
 	 * A string with whom, factories or other elements from the GUI, can
@@ -132,11 +132,7 @@ public class GAnsProperty<T> {
         }
 	}
 
-	/**
-	 * Returns the name/identifier of the GAnsProperty.
-	 * 
-	 * @return The name/identifier of the GAnsProperty.
-	 */
+	@Override
 	public String getName() {
 	    return this.name;
 	}
@@ -154,39 +150,23 @@ public class GAnsProperty<T> {
         }
 	}
 
-	/**
-	 * Returns the value of the GAnsProperty.
-	 * 
-	 * @return The value of the GAnsProperty.
-	 */
+	@Override
 	public T getValue() {
 	    return this.value;
 	}
 
-	/**
-	 * Returns the string-representation of the value from the GAnsProperty.
-	 * 
-	 * @return The string-representation of the value from the GAnsProperty.
-	 */
+	@Override
 	public String getValueAsString() {
 		return propertyValueAsString().get();
 	}
 
-	/**
-	 * Adds a ChangeListener to the value of the property.
-	 * 
-	 * @param listener The listener that will be added.
-	 */
-	public void addListenerToValue(ChangeListener<T> listener) {
+	@Override
+	public void addListener(ChangeListener<T> listener) {
 		propertyValue().addListener(listener);
 	}
 
-	/**
-	 * Removes a ChangeListener from the value of the property.
-	 * 
-	 * @param listener The listener that will be removed.
-	 */
-	public void removeListenerFromValue(ChangeListener<T> listener) {
+	@Override
+	public void removeListener(ChangeListener<T> listener) {
 		propertyValue().removeListener(listener);
 	}
 
