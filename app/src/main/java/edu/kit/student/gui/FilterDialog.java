@@ -12,6 +12,7 @@ import javafx.scene.control.ButtonBar;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.Dialog;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
 import javafx.scene.image.Image;
@@ -104,14 +105,19 @@ public class FilterDialog extends Dialog<ButtonType> {
 
         VBox vertexGroups = new VBox(10, checkAllVertex, vertexCheckboxes);
         vertexGroups.setPadding(new Insets(10, 0, 0, 0));
-        vertexFilterTab.setContent(vertexGroups);
+        ScrollPane vertexScroll = new ScrollPane(vertexGroups);
+        vertexScroll.setFitToWidth(true);
+        vertexScroll.setPrefSize(500, 450);
+        vertexFilterTab.setContent(vertexScroll);
 
         VBox edgeGroups = new VBox(10, checkAllEdge, edgeCheckboxes);
         edgeGroups.setPadding(new Insets(20, 0, 0, 0));
-        edgeFilterTab.setContent(edgeGroups);
+        ScrollPane edgeScroll = new ScrollPane(edgeGroups);
+        edgeScroll.setFitToWidth(true);
+        edgeScroll.setPrefSize(500, 450);
+        edgeFilterTab.setContent(edgeScroll);
 
         tabPane.getTabs().addAll(vertexFilterTab, edgeFilterTab);
-
 
         this.getDialogPane().setContent(tabPane);
 
