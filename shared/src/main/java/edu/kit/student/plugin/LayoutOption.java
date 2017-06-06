@@ -1,5 +1,6 @@
 package edu.kit.student.plugin;
 
+import edu.kit.student.graphmodel.Graph;
 import edu.kit.student.parameter.Settings;
 
 /**
@@ -33,4 +34,18 @@ public abstract class LayoutOption extends EntryPointOption implements Cloneable
      * This allows the layout option to prepare the actual LayoutAlgorithm.
      */
     public abstract void chooseLayout();
+
+    public boolean canOptimizeEdges() {
+        return getGraph().canOptimizeEdges();
+    }
+
+    public void setFixVertices(boolean fixVertices) {
+        getGraph().setFixesVertices(fixVertices);
+    }
+
+    public boolean getFixVertices() {
+        return getGraph().fixesVertices().getValue();
+    }
+
+    public abstract LayoutAlgorithm<? extends Graph> getGraph();
 }

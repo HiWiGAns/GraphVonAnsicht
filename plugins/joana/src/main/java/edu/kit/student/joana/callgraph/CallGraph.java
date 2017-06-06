@@ -1,14 +1,10 @@
 package edu.kit.student.joana.callgraph;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import edu.kit.student.graphmodel.*;
+import edu.kit.student.graphmodel.CompoundVertex;
+import edu.kit.student.graphmodel.Edge;
+import edu.kit.student.graphmodel.InlineSubGraph;
+import edu.kit.student.graphmodel.Vertex;
+import edu.kit.student.graphmodel.ViewableVertex;
 import edu.kit.student.graphmodel.action.EdgeAction;
 import edu.kit.student.graphmodel.action.SubGraphAction;
 import edu.kit.student.graphmodel.action.VertexAction;
@@ -26,6 +22,13 @@ import edu.kit.student.joana.methodgraph.MethodGraph;
 import edu.kit.student.objectproperty.GAnsProperty;
 import edu.kit.student.plugin.LayoutOption;
 import edu.kit.student.util.LanguageManager;
+
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * This is a specified graph representation for the Callgraph in Joana.

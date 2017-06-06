@@ -149,8 +149,8 @@ public class MethodGraphLayout extends LayoutAlgorithm<MethodGraph> {
 		this.layout(graph);
 
 		//set the graphs active vertex- and edgefilter again
-		graph.setVertexFilter(vertexFilters);
-		graph.setEdgeFilter(edgeFilters);
+		graph.setVertexFilter(new LinkedList<>(vertexFilters));
+		graph.setEdgeFilter(new LinkedList<>(edgeFilters));
 
 		//export the state of the graph layouted
 		LayoutedGraph lg = this.sugiyamaLayoutAlgorithm.exportLayoutedGraph();

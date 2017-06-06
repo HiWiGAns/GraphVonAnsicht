@@ -8,9 +8,7 @@ import edu.kit.student.plugin.EdgeFilter;
 import edu.kit.student.plugin.LayoutOption;
 import edu.kit.student.plugin.VertexFilter;
 import edu.kit.student.util.LanguageManager;
-import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
-import javafx.collections.ObservableList;
 import javafx.collections.SetChangeListener;
 import javafx.event.ActionEvent;
 import javafx.scene.Node;
@@ -38,6 +36,7 @@ public class GraphView extends Pane {
 	private GraphViewSelectionModel selectionModel;
 	private GraphViewGraphFactory graphFactory;
 	private LayoutOption layout;
+	private FilterModel model = new FilterModel();
 
 	private ContextMenu contextMenu;
     private List<MenuItem> dynamicMenuListItems = new LinkedList<>();
@@ -46,8 +45,11 @@ public class GraphView extends Pane {
 	
 	private final GAnsMediator mediator;
 
-	private final Collection<VertexFilter> lastVertexFilter = new LinkedList<>();
-	private final Collection<EdgeFilter> lastEdgeFilter = new LinkedList<>();
+	/**
+	 * Hold the filters, which have been active in during the last layout.
+	 */
+	private final Set<VertexFilter> lastLayoutVFilter = new HashSet<>();
+	private final Set<EdgeFilter> lastLayoutEFilter = new HashSet<>();
 
 	/**
 	 * Constructor.
@@ -76,24 +78,16 @@ public class GraphView extends Pane {
 		graphFactory = new GraphViewGraphFactory(graph);
 		groupManager = new GroupManager();
 
-		lastEdgeFilter.addAll(graphFactory.getGraph().getActiveEdgeFilter());
-		lastVertexFilter.addAll(graphFactory.getGraph().getActiveVertexFilter());
-
-		lastVertexFilter.clear();
-		lastVertexFilter.addAll(graph.getActiveVertexFilter());
-		lastEdgeFilter.clear();
-		lastEdgeFilter.addAll(graph.getActiveEdgeFilter());
+		lastLayoutVFilter.clear();
+		lastLayoutVFilter.addAll(graph.getActiveVertexFilter());
+		lastLayoutEFilter.clear();
+		lastLayoutEFilter.addAll(graph.getActiveEdgeFilter());
 
 		getChildren().addAll(graphFactory.getGraphicalElements());
 	}
 	
 	public void reloadGraph() {
 		graphFactory.refreshGraph();
-
-		lastVertexFilter.clear();
-		lastVertexFilter.addAll(graphFactory.getGraph().getActiveVertexFilter());
-		lastEdgeFilter.clear();
-		lastEdgeFilter.addAll(graphFactory.getGraph().getActiveEdgeFilter());
 
 		getChildren().clear();
 		getChildren().addAll(graphFactory.getGraphicalElements());
@@ -224,73 +218,70 @@ public class GraphView extends Pane {
 	public void openGroupDialog() {
 		groupManager.openGroupDialog(this.getScene().getWindow());
 	}
-	
+
 	public void openFilterDialog() {
 
-        LinkedList<VertexFilter> selectedVertexFilter = new LinkedList<>(this.graphFactory.getGraph().getActiveVertexFilter());
-		ObservableList<VertexFilter> obsvervedVertexFilter = FXCollections.observableList(selectedVertexFilter);
-		List<VertexFilter> vertexBackup = new LinkedList<>(selectedVertexFilter);
+        // Reload vertex filters from graph (maybe they have changed through some other control)
+        model.getVertexFilters().clear();
+		model.getVertexFilters().addAll(this.graphFactory.getGraph().getActiveVertexFilter());
 
-		LinkedList<EdgeFilter> selectedEdgeFilter = new LinkedList<>(this.graphFactory.getGraph().getActiveEdgeFilter());
-		ObservableList<EdgeFilter> observedEdgeFilter = FXCollections.observableList(selectedEdgeFilter);
-		List<EdgeFilter> edgeBackup = new LinkedList<>(selectedEdgeFilter);
 
-    	FilterDialog fd = new FilterDialog(obsvervedVertexFilter, observedEdgeFilter);
-		fd.initOwner(this.getScene().getWindow());
+		model.getEdgeFilters().clear();
+		model.getEdgeFilters().addAll(this.graphFactory.getGraph().getActiveEdgeFilter());
 
-    	// On Apply and Layout apply the filters and relayout the graph.
-		final Button btnApplyAndLayout = (Button) fd.getDialogPane().lookupButton(FilterDialog.applyAndLayout);
-        btnApplyAndLayout.addEventFilter(ActionEvent.ACTION, event -> {
-            if (!(listEqualsNoOrder(vertexBackup, obsvervedVertexFilter) &&
-                    listEqualsNoOrder(edgeBackup, observedEdgeFilter))) {
-				applyAndLayout(obsvervedVertexFilter, observedEdgeFilter);
-			}
-			event.consume();
-        });
+		model.backup();
+		assert !needLayout();
+		model.needLayout.setValue(needLayout());
+		model.canOptimize.setValue(layout.canOptimizeEdges());
+		FilterDialogController fdc = FilterDialogController.showDialog(model);
+		fdc.initOwner(this.getScene().getWindow());
 
 		// On Apply and Layout only apply the filters.
-		final Button btnApply = (Button) fd.getDialogPane().lookupButton(ButtonType.APPLY);
+		final Button btnApply = (Button) fdc.getDialogPane().lookupButton(ButtonType.APPLY);
 		btnApply.addEventFilter(ActionEvent.ACTION, event -> {
-			this.graphFactory.getGraph().setVertexFilter(obsvervedVertexFilter);
-			this.graphFactory.getGraph().setEdgeFilter(observedEdgeFilter);
+			this.graphFactory.getGraph().setVertexFilter(model.getVertexFilters());
+			this.graphFactory.getGraph().setEdgeFilter(model.getEdgeFilters());
 			reloadGraph();
 			event.consume();
 		});
 
-		// Disable apply button when earlier disabled filter are enabled.
-		observedEdgeFilter.addListener((ListChangeListener<EdgeFilter>) c ->
-            btnApply.setDisable(!(observedEdgeFilter.containsAll(lastEdgeFilter)
-					           && obsvervedVertexFilter.containsAll(lastVertexFilter))));
+		model.observableVertexFilters().addListener((ListChangeListener<VertexFilter>) c ->
+				model.needLayout.setValue(needLayout()));
+		model.observableEdgeFilters().addListener((ListChangeListener<EdgeFilter>) c ->
+				model.needLayout.setValue(needLayout()));
 
-		obsvervedVertexFilter.addListener((ListChangeListener<VertexFilter>) c ->
-			btnApply.setDisable(!(observedEdgeFilter.containsAll(lastEdgeFilter)
-					&& obsvervedVertexFilter.containsAll(lastVertexFilter))));
 
-		fd.showAndWait();
+		// On Apply and Layout apply the filters and relayout the graph.
+		fdc.showAndWait().filter(FilterDialogController.APPLYANDLAYOUT::equals).ifPresent(b -> {
+			if (model.changedSinceBackup()) {
+			    if (model.optimize())
+			        layout.setFixVertices(true);
+				applyAndLayout(model.getVertexFilters(), model.getEdgeFilters());
+				layout.setFixVertices(false);
+			}
+        });
 	}
 
-    private static <T> boolean listEqualsNoOrder(List<T> l1, List<T> l2) {
-        final Set<T> s1 = new HashSet<>(l1);
-        final Set<T> s2 = new HashSet<>(l2);
-
-        return s1.equals(s2);
-    }
+	private boolean needLayout() {
+        return !model.getEdgeFilters().containsAll(lastLayoutEFilter)
+            || !model.getVertexFilters().containsAll(lastLayoutVFilter);
+	}
 
     private void applyAndLayout(List<VertexFilter> vertexFilters, List<EdgeFilter> edgeFilters) {
 		// Only redraw if OK was pressed and if there was a change in the selection.
-		this.graphFactory.getGraph().setVertexFilter(vertexFilters);
-		this.graphFactory.getGraph().setEdgeFilter(edgeFilters);
-
-		lastVertexFilter.clear();
-		lastEdgeFilter.clear();
-		lastVertexFilter.addAll(vertexFilters);
-		lastEdgeFilter.addAll(edgeFilters);
-
+		this.graphFactory.getGraph().setVertexFilter(new LinkedList<>(vertexFilters));
+		this.graphFactory.getGraph().setEdgeFilter(new LinkedList<>(edgeFilters));
 		layoutGraph();
 	}
 
 	private void layoutGraph() {
+		lastLayoutEFilter.clear();
+		lastLayoutVFilter.clear();
+		lastLayoutVFilter.addAll(graphFactory.getGraph().getActiveVertexFilter());
+		lastLayoutEFilter.addAll(graphFactory.getGraph().getActiveEdgeFilter());
+		assert !needLayout();
 		this.layout.applyLayout();
 		reloadGraph();
 	}
+
 }

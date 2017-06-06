@@ -6,16 +6,19 @@ import edu.kit.student.plugin.PluginManager;
 import edu.kit.student.plugin.VertexFilter;
 import edu.kit.student.util.LanguageManager;
 import javafx.beans.value.ChangeListener;
+import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
+import javafx.scene.control.Button;
 import javafx.scene.control.ButtonBar;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.Dialog;
+import javafx.scene.control.DialogPane;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.Tab;
-import javafx.scene.control.TabPane;
 import javafx.scene.image.Image;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.TilePane;
@@ -24,11 +27,13 @@ import javafx.stage.Stage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.ResourceBundle;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -41,7 +46,7 @@ import java.util.stream.Collectors;
  *
  * @author Lucas Steinmann, Nicolas Boltz
  */
-public class FilterDialog extends Dialog<ButtonType> {
+public class FilterDialogController extends Dialog<ButtonType> {
 
 
     private final Logger logger = LoggerFactory.getLogger(GraphViewSelectionModel.class);
@@ -51,38 +56,71 @@ public class FilterDialog extends Dialog<ButtonType> {
 
     private enum Props { filterdialog_x, filterdialog_y, filterdialog_width, filterdialog_height }
 
-    public static final ButtonType applyAndLayout = new ButtonType("Apply and Layout", ButtonBar.ButtonData.APPLY);
+    public static final ButtonType APPLYANDLAYOUT = new ButtonType("Apply and Layout", ButtonBar.ButtonData.APPLY);
+
+    private FilterModel model;
+
+    @FXML
+    private Tab edgeTab;
+
+    @FXML
+    private Tab vertexTab;
+
+    @FXML
+    private DialogPane dialogPane;
+
+    @FXML
+    private CheckBox cbOptimize;
 
     /**
-     * Constructs a new dialog for selecting filter.
-     * <p>
-     * The filters passed as arguments should be the filters
-     * which are currently active.
-     * These filter will be preselected when the dialog is opened.
-     * </p>
      *
-     * @param activeVertexFilter the currently active vertex filter
-     * @param activeEdgeFilter the currently active edge filter
+     * @param model the model holding the state of activated and possible filter options
      */
-    public FilterDialog(List<VertexFilter> activeVertexFilter, List<EdgeFilter> activeEdgeFilter) {
-        super();
+    public void initModel(FilterModel model) {
+        if (this.model != null)
+            throw new IllegalStateException("Cannot init model twice.");
+        this.model = model;
+        fillDialog();
+        this.setDialogPane(dialogPane);
 
-        TabPane tabPane = fillDialog(activeVertexFilter, activeEdgeFilter);
+        // Disable apply button when earlier disabled filter are enabled.
+        final Button btnApply = (Button) getDialogPane().lookupButton(ButtonType.APPLY);
+        model.needLayout.addListener((observable, oldValue, newValue) -> btnApply.setDisable(newValue));
+        btnApply.setDisable(model.needLayout.getValue());
 
-        Stage stage = (Stage) getDialogPane().getScene().getWindow();
+        model.canOptimize.addListener((observable, oldValue, newValue)
+                -> cbOptimize.setDisable(!model.canOptimize.get() || model.needLayout.get()));
+        model.needLayout.addListener((observable, oldValue, newValue)
+                -> cbOptimize.setDisable(!model.canOptimize.get() || model.needLayout.get()));
+        cbOptimize.setDisable(!model.canOptimize.getValue());
+    }
+
+    public static FilterDialogController showDialog(FilterModel model) {
+        FilterDialogController dialogController = new FilterDialogController();
+        ResourceBundle bundle = ResourceBundle.getBundle("language.Lang");
+        FXMLLoader loader = new FXMLLoader( dialogController.getClass().getResource("/fxml/filterdialog.fxml"), bundle);
+        try {
+            loader.load();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        final FilterDialogController fdc = loader.getController();
+        fdc.initModel(model);
+
+        Stage stage = (Stage) fdc.getDialogPane().getScene().getWindow();
         stage.getIcons().add(new Image("gans_icon.png"));
         stage.setMinWidth(minWindowWidth);
         stage.setMinHeight(minWindowHeight);
 
-        getDialogPane().setContent(tabPane);
-        getDialogPane().getButtonTypes().addAll(ButtonType.APPLY, applyAndLayout, ButtonType.CLOSE);
+        fdc.setOnCloseRequest(e -> fdc.saveSettings());
+        fdc.loadConfig();
+        fdc.setTitle(LanguageManager.getInstance().get("wind_filter_title"));
+        fdc.setHeaderText(null);
+        fdc.setGraphic(null);
+        fdc.setResizable(true);
 
-        setOnCloseRequest(e -> saveSettings());
-        loadConfig();
-        setTitle(LanguageManager.getInstance().get("wind_filter_title"));
-        setHeaderText(null);
-        setGraphic(null);
-        setResizable(true);
+
+        return fdc;
     }
 
     private void loadConfig() {
@@ -110,16 +148,7 @@ public class FilterDialog extends Dialog<ButtonType> {
         settings.saveSettings();
     }
 
-    private TabPane fillDialog(List<VertexFilter> activeVertexFilter, List<EdgeFilter> activeEdgeFilter) {
-
-        // Create the vertex filter tab
-        TabPane tabPane = new TabPane();
-        Tab vertexFilterTab = new Tab(LanguageManager.getInstance().get("wind_filter_vertices"));
-        vertexFilterTab.setClosable(false);
-
-        //Create the edge filter tab
-        Tab edgeFilterTab = new Tab(LanguageManager.getInstance().get("wind_filter_edges"));
-        edgeFilterTab.setClosable(false);
+    private void fillDialog() {
 
         // The box controlling the state of all vertices
         CheckBox checkAllVertex = new CheckBox(LanguageManager.getInstance().get("filter_select_all"));
@@ -130,10 +159,10 @@ public class FilterDialog extends Dialog<ButtonType> {
 
         List<FilterCheckBox> vertexFilterCheckboxes = new LinkedList<>();
         for (VertexFilter filter : PluginManager.getPluginManager().getVertexFilter())
-            vertexFilterCheckboxes.add(new FilterCheckBox<>(filter, activeVertexFilter));
+            vertexFilterCheckboxes.add(new FilterCheckBox<>(filter, model.getVertexFilters()));
         List<FilterCheckBox> edgeFilterCheckboxes = new LinkedList<>();
         for (EdgeFilter filter : PluginManager.getPluginManager().getEdgeFilter())
-            edgeFilterCheckboxes.add(new FilterCheckBox<>(filter, activeEdgeFilter));
+            edgeFilterCheckboxes.add(new FilterCheckBox<>(filter, model.getEdgeFilters()));
 
 
         // Fill with groups of checkboxes
@@ -149,19 +178,13 @@ public class FilterDialog extends Dialog<ButtonType> {
         vertexGroups.setPadding(new Insets(10, 0, 0, 0));
         ScrollPane vertexScroll = new ScrollPane(vertexGroups);
         vertexScroll.setFitToWidth(true);
-//        vertexScroll.setPrefSize(500, 450);
-        vertexFilterTab.setContent(vertexScroll);
+        vertexTab.setContent(vertexScroll);
 
         VBox edgeGroups = new VBox(10, checkAllEdge, edgeCheckboxes);
         edgeGroups.setPadding(new Insets(20, 0, 0, 0));
         ScrollPane edgeScroll = new ScrollPane(edgeGroups);
         edgeScroll.setFitToWidth(true);
-//        edgeScroll.setPrefSize(500, 450);
-        edgeFilterTab.setContent(edgeScroll);
-
-        tabPane.getTabs().addAll(vertexFilterTab, edgeFilterTab);
-
-        return tabPane;
+        edgeTab.setContent(edgeScroll);
     }
 
     private Pane createCheckboxSetPane(List<FilterCheckBox> checkBoxes,

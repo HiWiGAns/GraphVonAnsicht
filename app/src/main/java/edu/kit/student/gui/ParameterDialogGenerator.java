@@ -120,6 +120,7 @@ public class ParameterDialogGenerator extends ParameterVisitor {
 		factory.setConverter(this.intConverter);
 
 		Spinner<Integer> spinner = new Spinner<>(factory);
+		spinner.setEditable(true);
 		parameter.propertyValue().bind(spinner.valueProperty());
 		spinner.disableProperty().bind(parameter.disabledProperty());
 		parameter.cacheCurrentValue();
@@ -137,6 +138,7 @@ public class ParameterDialogGenerator extends ParameterVisitor {
 		factory.setConverter(this.doubleConverter);
 
 		Spinner<Double> spinner = new Spinner<>(factory);
+		spinner.setEditable(true);
 		parameter.propertyValue().bind(spinner.valueProperty());
 		spinner.disableProperty().bind(parameter.disabledProperty());
 		parameter.cacheCurrentValue();

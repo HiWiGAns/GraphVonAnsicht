@@ -68,11 +68,17 @@ public abstract class LayoutAlgorithm<G extends Graph> {
     }
 
     /**
-     * Returns a read-only version of the parameter, specifying if the vertices should be fixed.
+     * Returns a read-only version of the parameter, specifying if the vertices should be fixed during the layout.
      * @return the fixed vertices parameter
      */
-    public ReadOnlyParameter<Boolean> fixedVertices() {
+    public ReadOnlyParameter<Boolean> fixesVertices() {
         return fixedVertexPosition;
+    }
+
+    public void setFixesVertices(boolean fixesVertices) {
+        if (!canOptimizeEdges() && fixesVertices)
+            throw new IllegalArgumentException("Algorithm does not support fixed vertex positions.");
+        else this.fixedVertexPosition.setValue(fixesVertices);
     }
 
 }

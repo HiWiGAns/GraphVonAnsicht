@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import edu.kit.student.gui.FilterDialogController?>
+<?import javafx.scene.control.ButtonType?>
+<?import javafx.scene.control.CheckBox?>
+<?import javafx.scene.control.DialogPane?>
+<?import javafx.scene.control.Tab?>
+<?import javafx.scene.control.TabPane?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.VBox?>
+<DialogPane fx:id="dialogPane"
+            fx:controller="edu.kit.student.gui.FilterDialogController"
+            prefHeight="500.0" prefWidth="450.0"
+            xmlns="http://javafx.com/javafx/8.0.111"
+            xmlns:fx="http://javafx.com/fxml/1">
+   <buttonTypes>
+      <ButtonType fx:constant="APPLY" />
+      <FilterDialogController fx:constant="APPLYANDLAYOUT" />
+      <ButtonType fx:constant="CLOSE" />
+   </buttonTypes>
+   <content>
+      <VBox prefHeight="200.0" prefWidth="100.0" spacing="10">
+         <children>
+            <TabPane prefHeight="200.0" prefWidth="200.0" tabClosingPolicy="UNAVAILABLE" VBox.vgrow="ALWAYS">
+              <tabs>
+                <Tab  fx:id="vertexTab" text="%wind_filter_vertices">
+                  <content>
+                    <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0" />
+                  </content>
+                </Tab>
+                <Tab fx:id="edgeTab" text="%wind_filter_edges">
+                  <content>
+                    <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0" />
+                  </content>
+                </Tab>
+              </tabs>
+            </TabPane>
+            <CheckBox fx:id="cbOptimize" text="%filter_optimize" />
+         </children>
+      </VBox>
+   </content>
+</DialogPane>

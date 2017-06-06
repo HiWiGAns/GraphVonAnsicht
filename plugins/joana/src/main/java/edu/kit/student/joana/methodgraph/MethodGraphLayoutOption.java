@@ -1,6 +1,3 @@
-/**
- * 
- */
 package edu.kit.student.joana.methodgraph;
 
 import edu.kit.student.parameter.Settings;
@@ -48,4 +45,12 @@ public abstract class MethodGraphLayoutOption extends LayoutOption {
         }
         return layout.getSettings();
     }
+
+	@Override
+	public LayoutAlgorithm<? extends MethodGraph> getGraph() {
+		if (this.layout == null) {
+			chooseLayout();
+		}
+		return layout;
+	}
 }

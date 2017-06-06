@@ -49,4 +49,12 @@ public abstract class CallGraphLayoutOption extends LayoutOption {
         }
         return layout.getSettings();
     }
+
+	@Override
+	public LayoutAlgorithm<? extends CallGraph> getGraph() {
+		if (this.layout == null) {
+			chooseLayout();
+		}
+		return layout;
+	}
 }

@@ -1,8 +1,10 @@
 package edu.kit.student.sugiyama;
 
+import edu.kit.student.graphmodel.Graph;
 import edu.kit.student.graphmodel.directed.DirectedGraph;
 import edu.kit.student.graphmodel.directed.DirectedGraphLayoutOption;
 import edu.kit.student.parameter.Settings;
+import edu.kit.student.plugin.LayoutAlgorithm;
 
 public class SugiyamaLayoutOption extends DirectedGraphLayoutOption {
 	
@@ -29,6 +31,14 @@ public class SugiyamaLayoutOption extends DirectedGraphLayoutOption {
 	@Override
 	public void chooseLayout() {
 		this.algo = new SugiyamaLayoutAlgorithm<>();
+	}
+
+	@Override
+	public LayoutAlgorithm<? extends Graph> getGraph() {
+	    if (algo == null) {
+	    	chooseLayout();
+		}
+		return algo;
 	}
 
 }
