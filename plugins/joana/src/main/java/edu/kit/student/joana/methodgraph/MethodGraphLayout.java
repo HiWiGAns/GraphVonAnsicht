@@ -55,6 +55,14 @@ public class MethodGraphLayout extends LayoutAlgorithm<MethodGraph> {
 	
 	public MethodGraphLayout() {
 		this.sugiyamaLayoutAlgorithm = new SugiyamaLayoutAlgorithm<>();
+		fixesVertices().addListener(((observable, oldValue, newValue) -> {
+			if (sugiyamaLayoutAlgorithm.fixesVertices().getValue() != newValue)
+				sugiyamaLayoutAlgorithm.setFixesVertices(newValue);
+		}));
+		sugiyamaLayoutAlgorithm.fixesVertices().addListener(((observable, oldValue, newValue) -> {
+			if (fixesVertices().getValue() != newValue)
+				setFixesVertices(newValue);
+		}));
 	}
 
 	

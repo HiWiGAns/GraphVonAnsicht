@@ -34,7 +34,7 @@ public class SugiyamaLayoutOption extends DirectedGraphLayoutOption {
 	}
 
 	@Override
-	public LayoutAlgorithm<? extends Graph> getGraph() {
+	public LayoutAlgorithm<? extends Graph> getLayout() {
 	    if (algo == null) {
 	    	chooseLayout();
 		}

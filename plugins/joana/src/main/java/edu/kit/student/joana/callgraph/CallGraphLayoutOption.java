@@ -51,7 +51,7 @@ public abstract class CallGraphLayoutOption extends LayoutOption {
     }
 
 	@Override
-	public LayoutAlgorithm<? extends CallGraph> getGraph() {
+	public LayoutAlgorithm<? extends CallGraph> getLayout() {
 		if (this.layout == null) {
 			chooseLayout();
 		}

@@ -36,16 +36,16 @@ public abstract class LayoutOption extends EntryPointOption implements Cloneable
     public abstract void chooseLayout();
 
     public boolean canOptimizeEdges() {
-        return getGraph().canOptimizeEdges();
+        return getLayout().canOptimizeEdges();
     }
 
     public void setFixVertices(boolean fixVertices) {
-        getGraph().setFixesVertices(fixVertices);
+        getLayout().setFixesVertices(fixVertices);
     }
 
     public boolean getFixVertices() {
-        return getGraph().fixesVertices().getValue();
+        return getLayout().fixesVertices().getValue();
     }
 
-    public abstract LayoutAlgorithm<? extends Graph> getGraph();
+    public abstract LayoutAlgorithm<? extends Graph> getLayout();
 }

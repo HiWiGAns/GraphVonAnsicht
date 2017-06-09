@@ -93,6 +93,8 @@ public class FilterDialogController extends Dialog<ButtonType> {
         model.needLayout.addListener((observable, oldValue, newValue)
                 -> cbOptimize.setDisable(!model.canOptimize.get() || model.needLayout.get()));
         cbOptimize.setDisable(!model.canOptimize.getValue());
+        cbOptimize.selectedProperty().addListener((observable, oldValue, newValue) -> model.setOptimize(newValue));
+        cbOptimize.setSelected(model.optimize());
     }
 
     public static FilterDialogController showDialog(FilterModel model) {

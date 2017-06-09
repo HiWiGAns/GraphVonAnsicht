@@ -47,7 +47,7 @@ public abstract class MethodGraphLayoutOption extends LayoutOption {
     }
 
 	@Override
-	public LayoutAlgorithm<? extends MethodGraph> getGraph() {
+	public LayoutAlgorithm<? extends MethodGraph> getLayout() {
 		if (this.layout == null) {
 			chooseLayout();
 		}
