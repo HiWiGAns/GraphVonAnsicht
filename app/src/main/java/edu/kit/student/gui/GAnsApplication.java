@@ -13,12 +13,8 @@ import edu.kit.student.plugin.WorkspaceOption;
 import edu.kit.student.util.LanguageManager;
 import javafx.application.Application.Parameters;
 import javafx.application.Platform;
-import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.event.Event;
-import javafx.event.EventHandler;
 import javafx.geometry.Orientation;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
@@ -41,7 +37,6 @@ import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 import javafx.stage.FileChooser.ExtensionFilter;
 import javafx.stage.Stage;
-import javafx.stage.WindowEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -117,48 +112,39 @@ public class GAnsApplication {
 		
 		structureView.getSelectionModel().setSelectionMode(SelectionMode.SINGLE);
 		structureView.setContextMenu(structureViewContextMenu);
-		structureView.addEventHandler(MouseEvent.MOUSE_CLICKED, new EventHandler<MouseEvent>() {
-			@Override
-			public void handle(MouseEvent mouseEvent) {
-				if(GAnsApplication.this.currentGraphView != null) {
-					GAnsApplication.this.currentGraphView.getSelectionModel().clear();
-				}
-				if(mouseEvent.getButton() == MouseButton.PRIMARY && mouseEvent.getClickCount() == 2) {
-					openGraph(GAnsApplication.this.structureView.getIdOfSelectedItem());
-				} else {
-					ViewableGraph graph = model.getGraphFromId(GAnsApplication.this.structureView.getIdOfSelectedItem());
-					
-					ObservableList<GAnsProperty<?>> statistics = FXCollections.observableList(graph.getStatistics());
-					informationView.setFocus(statistics);
-					mouseEvent.consume();
-				}
-			}
-		});
+		structureView.addEventHandler(MouseEvent.MOUSE_CLICKED, mouseEvent -> {
+            if(GAnsApplication.this.currentGraphView != null) {
+                GAnsApplication.this.currentGraphView.getSelectionModel().clear();
+            }
+            // Open graph on double click
+            if(mouseEvent.getButton() == MouseButton.PRIMARY && mouseEvent.getClickCount() == 2) {
+                openGraph(GAnsApplication.this.structureView.getIdOfSelectedItem());
+            } else {
+                // Display statistics of graph on selection
+                ViewableGraph graph = model.getGraphFromId(GAnsApplication.this.structureView.getIdOfSelectedItem());
+
+                if (graph != null) {
+                    ObservableList<GAnsProperty<?>> statistics = FXCollections.observableList(graph.getStatistics());
+                    informationView.setFocus(statistics);
+                }
+                mouseEvent.consume();
+            }
+        });
 
 		SplitPane mainViewLayout = new SplitPane();
 		mainViewLayout.setDividerPosition(0, 0.75);
 		graphViewTabPane = new TabPane();
 		graphViewTabPane.setId("GraphViewTabPane");
-		graphViewTabPane.getSelectionModel().selectedItemProperty().addListener(new ChangeListener<Tab>() {
-			@Override
-			public void changed(ObservableValue<? extends Tab> observable, Tab oldValue, Tab newValue) {
-				if(newValue == null) {
-					GAnsApplication.this.currentGraphView = null;
-				} else {
-					GAnsApplication.this.currentGraphView = ((GraphViewTab) newValue).getGraphViewPanes().getGraphView();
-				}
-			}
-		});
+		graphViewTabPane.getSelectionModel().selectedItemProperty().addListener((obs, old, val) ->
+            GAnsApplication.this.currentGraphView = val == null
+					? null
+                    : ((GraphViewTab) val).getGraphViewPanes().getGraphView()
+        );
 		mainViewLayout.getItems().addAll(graphViewTabPane, treeInfoLayout);
 		rootLayout.getChildren().addAll(menuBar, mainViewLayout);
 		VBox.setVgrow(mainViewLayout, Priority.ALWAYS);
 		
-		primaryStage.setOnCloseRequest(new EventHandler<WindowEvent>() {
-			@Override
-			public void handle(WindowEvent event) {
-				saveSettings();
-			}
-		});
+		primaryStage.setOnCloseRequest(event -> saveSettings());
 
 		primaryStage.getIcons().add(new Image("gans_icon.png"));
 		primaryStage.setScene(scene);
@@ -349,7 +335,7 @@ public class GAnsApplication {
 			
 		} catch (ParseException e) {
 			this.graphViewTabPane.getTabs().clear();
-			showErrorDialog(e.getMessage() + "\nat\n" + e.getStackTrace());
+			showErrorDialog(e.getMessage() + "\nat\n" + Arrays.toString(e.getStackTrace()));
 		}  catch (IOException e) {
 			this.graphViewTabPane.getTabs().clear();
 			showErrorDialog(e.getMessage());
@@ -511,33 +497,30 @@ public class GAnsApplication {
         });
 		menuLayout.getItems().addAll(changeLayoutItem, layoutPropertiesItem);
 		
-		menuLayout.setOnShowing(new EventHandler<Event>() {
-			@Override
-			public void handle(Event e) {
-				// disabling the change and layout properties button if there is no graphview
-				if(GAnsApplication.this.currentGraphView == null) {
-					changeLayoutItem.setDisable(true);
-					layoutPropertiesItem.setDisable(true);
-				} else {
-					changeLayoutItem.setDisable(false);
-					if(currentGraphView.getCurrentLayoutOption().getSettings().size() == 0) {
-						layoutPropertiesItem.setDisable(true);
-					} else {
-						layoutPropertiesItem.setDisable(false);
-					}
-					changeLayoutItem.getItems().clear();
-					for(LayoutOption option: GAnsApplication.this.currentGraphView.getFactory().getGraph().getRegisteredLayouts()) {
-						MenuItem item = new MenuItem(option.getName());
-						item.setOnAction(e1 -> {
-                            option.chooseLayout();
-                            openLayoutSettingsDialog(option);
-                            currentGraphView.reloadGraph();
-                        });
-						changeLayoutItem.getItems().add(item);
-					}
-				}
-			}
-		});
+		menuLayout.setOnShowing(e -> {
+            // disabling the change and layout properties button if there is no graphview
+            if(GAnsApplication.this.currentGraphView == null) {
+                changeLayoutItem.setDisable(true);
+                layoutPropertiesItem.setDisable(true);
+            } else {
+                changeLayoutItem.setDisable(false);
+                if(currentGraphView.getCurrentLayoutOption().getSettings().size() == 0) {
+                    layoutPropertiesItem.setDisable(true);
+                } else {
+                    layoutPropertiesItem.setDisable(false);
+                }
+                changeLayoutItem.getItems().clear();
+                for(LayoutOption option: GAnsApplication.this.currentGraphView.getFactory().getGraph().getRegisteredLayouts()) {
+                    MenuItem item = new MenuItem(option.getName());
+                    item.setOnAction(e1 -> {
+option.chooseLayout();
+openLayoutSettingsDialog(option);
+currentGraphView.reloadGraph();
+});
+                    changeLayoutItem.getItems().add(item);
+                }
+            }
+        });
 		
 		Menu menuOther = new Menu(LanguageManager.getInstance().get("mnu_other"));
 		MenuItem groupItem = new MenuItem(LanguageManager.getInstance().get("mnu_other_groups"));
