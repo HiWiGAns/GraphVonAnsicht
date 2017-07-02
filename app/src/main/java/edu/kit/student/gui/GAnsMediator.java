@@ -24,10 +24,6 @@ public class GAnsMediator extends Application {
 		launch(args);
 	}
 	
-	public void openGraph(int id) {
-		this.app.openGraph(id);
-	}
-	
 	public GAnsApplication getGansApp() {
 	    return app;
 	}

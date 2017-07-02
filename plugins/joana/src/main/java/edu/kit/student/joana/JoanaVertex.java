@@ -1,12 +1,13 @@
 package edu.kit.student.joana;
 
-import java.util.List;
-
 import edu.kit.student.graphmodel.DefaultVertex;
+import edu.kit.student.graphmodel.VertexReference;
 import edu.kit.student.graphmodel.ViewableVertex;
 import edu.kit.student.objectproperty.GAnsProperty;
 import edu.kit.student.util.DoublePoint;
 import javafx.scene.paint.Color;
+
+import java.util.List;
 
 /**
  * A Joana specific Vertex. It contains parameters which are only used/useful
@@ -246,8 +247,8 @@ public class JoanaVertex extends DefaultVertex implements ViewableVertex {
     }
 
     @Override
-    public int getLink() {
-        return -1;
+    public VertexReference getLink() {
+        return null;
     }
 
     public void setSize(DoublePoint newSize){

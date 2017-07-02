@@ -1,9 +1,10 @@
 package edu.kit.student.joana;
 
-import java.util.List;
-
+import edu.kit.student.graphmodel.VertexReference;
 import edu.kit.student.joana.methodgraph.MethodGraph;
 import edu.kit.student.objectproperty.GAnsProperty;
+
+import java.util.List;
 
 public class CallGraphVertex extends JoanaVertex {
 	
@@ -79,8 +80,8 @@ public class CallGraphVertex extends JoanaVertex {
 	}
 
 	@Override
-    public int getLink() {
-	    return methodGraph.getID();
+    public VertexReference getLink() {
+	    return new VertexReference(getGraph(), null);
     }
 
 	@Override

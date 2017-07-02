@@ -14,7 +14,7 @@ import javafx.scene.control.TableView;
  * 
  * @author Nicolas
  */
-public class InformationView extends TableView<GAnsProperty<?>> {
+public class InformationView extends TableView<GAnsProperty<?>> implements GAnsPane {
 
 	private final ObservableList<GAnsProperty<?>> internalItems = FXCollections.observableArrayList();
 	private final ListSynchronization<GAnsProperty<?>> synchronization = new ListSynchronization<>(internalItems);
@@ -59,5 +59,15 @@ public class InformationView extends TableView<GAnsProperty<?>> {
 		}
 		focusedList = information;
 		information.addListener(synchronization);
+	}
+
+	@Override
+	public boolean hasInformation() {
+		return false;
+	}
+
+	@Override
+	public ObservableList<GAnsProperty<?>> getInformation() {
+	    throw new IllegalStateException();
 	}
 }

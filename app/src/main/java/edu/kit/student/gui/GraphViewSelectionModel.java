@@ -1,6 +1,10 @@
 package edu.kit.student.gui;
 
+import edu.kit.student.graphmodel.Edge;
+import edu.kit.student.graphmodel.Vertex;
+import edu.kit.student.objectproperty.GAnsProperty;
 import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.collections.ObservableSet;
 import javafx.collections.SetChangeListener;
 import javafx.scene.paint.Color;
@@ -23,12 +27,34 @@ class GraphViewSelectionModel {
 	private ObservableSet<VertexShape> selectedVertexShapes;
 	private ObservableSet<EdgeShape> selectedEdgeShapes;
 	private ObservableSet<GAnsGraphElement> selectedShapes;
+	private ObservableList<GAnsProperty<?>> selectionInformation;
 
 
-	GraphViewSelectionModel() {
+	GraphViewSelectionModel(GraphView graphView) {
 		selectedVertexShapes = FXCollections.observableSet(new HashSet<VertexShape>());
 		selectedEdgeShapes = FXCollections.observableSet(new HashSet<EdgeShape>());
 		selectedShapes = FXCollections.observableSet(new HashSet<GAnsGraphElement>());
+		selectionInformation = FXCollections.observableArrayList();
+
+		selectedShapes.addListener((SetChangeListener<GAnsGraphElement>) change -> {
+			GraphViewGraphFactory factory = graphView.getFactory();
+            // Urgh.. Add common interface for edge and vertex
+            if (change.wasAdded()) {
+                Edge edge = factory.getEdgeFromShape(change.getElementAdded());
+                if (edge != null)
+                    selectionInformation.addAll(edge.getProperties());
+                Vertex vertex = factory.getVertexFromShape(change.getElementAdded());
+                if (vertex != null)
+                    selectionInformation.addAll(vertex.getProperties());
+            } else if (change.wasRemoved()) {
+				Edge edge = factory.getEdgeFromShape(change.getElementRemoved());
+				if (edge != null)
+					selectionInformation.removeAll(edge.getProperties());
+				Vertex vertex = factory.getVertexFromShape(change.getElementRemoved());
+				if (vertex != null)
+					selectionInformation.removeAll(vertex.getProperties());
+			}
+		});
 
 		// Sync super set with individual sets.
 		SetChangeListener<GAnsGraphElement> syncSetListener = change -> {
@@ -119,5 +145,9 @@ class GraphViewSelectionModel {
 
 	ObservableSet<GAnsGraphElement> getSelectedShapes() {
 		return selectedShapes;
+	}
+
+	ObservableList<GAnsProperty<?>> getSelectionInformation() {
+	    return selectionInformation;
 	}
 }

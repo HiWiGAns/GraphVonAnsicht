@@ -1,17 +1,17 @@
 package edu.kit.student.graphmodel;
 
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-
 import edu.kit.student.objectproperty.GAnsProperty;
 import edu.kit.student.util.DoublePoint;
 import edu.kit.student.util.IdGenerator;
 import edu.kit.student.util.IntegerPoint;
 import edu.kit.student.util.Settings;
 import javafx.scene.paint.Color;
+
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 
 /**
  * This is an DefaultVertex, which has basic functions and is provided by the
@@ -26,7 +26,7 @@ public class DefaultVertex implements ViewableVertex {
 	private double x;
 	private double y;
 	private IntegerPoint leftRightMargin;
-	private int link = 0;
+	private VertexReference link = null;
 	private List<GAnsProperty<?>> data;
 
 	/**
@@ -152,12 +152,12 @@ public class DefaultVertex implements ViewableVertex {
     }
 
 	@Override
-	public int getLink() {
+	public VertexReference getLink() {
 		return this.link;
 	}
 	
-	public void setLink(int graphId) {
-		this.link = graphId;
+	public void setLink(VertexReference link) {
+		this.link = link;
 	}
 
 	@Override

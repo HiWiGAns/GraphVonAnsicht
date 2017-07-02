@@ -1,13 +1,22 @@
 package edu.kit.student.gui;
 
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-
 import edu.kit.student.graphmodel.GraphModel;
 import edu.kit.student.graphmodel.ViewableGraph;
+import edu.kit.student.objectproperty.GAnsProperty;
+import edu.kit.student.util.LanguageManager;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import javafx.scene.control.ContextMenu;
+import javafx.scene.control.MenuItem;
+import javafx.scene.control.SelectionMode;
+import javafx.scene.control.TreeCell;
 import javafx.scene.control.TreeItem;
 import javafx.scene.control.TreeView;
+import javafx.scene.input.MouseButton;
+import javafx.scene.input.MouseEvent;
+
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  * The StructureView regulates the access and representation of the elements in
@@ -15,16 +24,41 @@ import javafx.scene.control.TreeView;
  * 
  * @author Nicolas
  */
-public class StructureView extends TreeView<String> {
+public class StructureView extends TreeView<ViewableGraph> implements GAnsPane {
 
-	private HashMap<TreeItem<String>, Integer> itemMap;
+    private ObservableList<GAnsProperty<?>> graphStatistics = FXCollections.observableArrayList();
 
 	/**
 	 * Constructor.
 	 */
-	public StructureView() {
-		itemMap = new HashMap<TreeItem<String>, Integer>();
+	StructureView(GAnsApplication application) {
 		setShowRoot(false);
+		setCellFactory(param -> new GraphCell());
+		getSelectionModel().setSelectionMode(SelectionMode.SINGLE);
+		ContextMenu contextMenu = new ContextMenu();
+
+		MenuItem openGraph = new MenuItem(LanguageManager.getInstance().get("ctx_open"));
+		openGraph.setOnAction(e
+				-> application.openGraph(getSelectionModel().getSelectedItem().getValue()));
+
+		addEventHandler(MouseEvent.MOUSE_CLICKED, mouseEvent -> {
+			// Open graph on double click
+			if (mouseEvent.getButton() == MouseButton.PRIMARY && mouseEvent.getClickCount() == 2) {
+				application.openGraph(getSelectedGraph());
+			} else {
+				// Display statistics of graph on selection
+				ViewableGraph graph = getSelectedGraph();
+				graphStatistics.clear();
+
+				if (graph != null) {
+					graphStatistics.addAll(graph.getStatistics());
+				}
+				mouseEvent.consume();
+			}
+		});
+
+		contextMenu.getItems().add(openGraph);
+		setContextMenu(contextMenu);
 	}
 
 	/**
@@ -35,31 +69,45 @@ public class StructureView extends TreeView<String> {
 	 * @param graphModel
 	 *            The graph which should be represented.
 	 */
-	public void showGraphModel(GraphModel graphModel) {
-		TreeItem<String> root = new TreeItem<String>();
+	void showGraphModel(GraphModel graphModel) {
+		TreeItem<ViewableGraph> root = new TreeItem<>();
 		addGraphsToItem(graphModel, graphModel.getRootGraphs(), root);
 		setRoot(root);
 	}
-	
-	private void addGraphsToItem(GraphModel model, List<? extends ViewableGraph> graphs, TreeItem<String> item) {
-		List<TreeItem<String>> items = new LinkedList<TreeItem<String>>();
+
+	ViewableGraph getSelectedGraph() {
+	    return selectionModelProperty().get().getSelectedItem().getValue();
+	}
+
+	@Override
+	public boolean hasInformation() {
+		return true;
+	}
+
+	@Override
+	public ObservableList<GAnsProperty<?>> getInformation() {
+		return graphStatistics;
+	}
+
+	private void addGraphsToItem(GraphModel model, List<? extends ViewableGraph> graphs, TreeItem<ViewableGraph> parent) {
+		List<TreeItem<ViewableGraph>> items = new LinkedList<>();
 		for(ViewableGraph graph : graphs) {
-			TreeItem<String> graphItem = new TreeItem<String>(graph.getName());
+			TreeItem<ViewableGraph> graphItem = new TreeItem<>(graph);
 			graphItem.setExpanded(true);
-			itemMap.put(graphItem, graph.getID());
 			items.add(graphItem);
 			addGraphsToItem(model, model.getChildGraphs(graph), graphItem);
 		}
-		item.getChildren().addAll(items);
+		parent.getChildren().addAll(items);
 	}
-	
-	/**
-	 * Returns the id of the selected graph.
-	 * @return The id of the selected graph.
-	 */
-	public Integer getIdOfSelectedItem() {
-		Integer id = itemMap.get(getSelectionModel().getSelectedItem());
-		if(id == null) return -1;
-		return id;
+
+
+	private class GraphCell extends TreeCell<ViewableGraph> {
+
+		@Override
+		protected void updateItem(ViewableGraph item, boolean empty) {
+			super.updateItem(item, empty);
+            setText(item == null ? "" : item.getName());
+		}
 	}
+
 }

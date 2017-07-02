@@ -7,9 +7,9 @@ public interface ViewableVertex extends Vertex {
      * Returns -1 when no link is set.
      * @return the id of the graph
      */
-    public int getLink();
+    VertexReference getLink();
     
-    public VertexPriority getPriority();
+    VertexPriority getPriority();
     
     /**
      * Indicates the priority of a vertex.
@@ -18,7 +18,7 @@ public interface ViewableVertex extends Vertex {
      * If extended the GraphViewGraphFactory must be extended as well, 
      * unknown priorities will be interpreted as HIGH-
      */
-    public enum VertexPriority {
+    enum VertexPriority {
     	HIGH, LOW
     }
 }

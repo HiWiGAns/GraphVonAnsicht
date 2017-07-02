@@ -1,6 +1,7 @@
 package edu.kit.student.gui;
 
 import edu.kit.student.graphmodel.Edge;
+import edu.kit.student.graphmodel.VertexReference;
 import edu.kit.student.graphmodel.ViewableGraph;
 import edu.kit.student.graphmodel.ViewableVertex;
 import edu.kit.student.graphmodel.action.Action;
@@ -32,6 +33,7 @@ import java.util.stream.Collectors;
  * @author Nicolas
  */
 public class GraphView extends Pane {
+	// TODO: Deselect items on focus lost
 
 	private final GraphViewSelectionModel selectionModel;
 	private GraphViewGraphFactory graphFactory;
@@ -43,7 +45,7 @@ public class GraphView extends Pane {
     
 	private GroupManager groupManager;
 	
-	private final GAnsMediator mediator;
+	private final GraphTabPaneController tabPaneController;
 
 	/**
 	 * Hold the filters, which have been active in during the last layout.
@@ -53,12 +55,10 @@ public class GraphView extends Pane {
 
 	/**
 	 * Constructor.
-	 * 
-	 * @param mediator to connect with context menu
 	 */
-	public GraphView(GAnsMediator mediator, GraphViewSelectionModel selectionModel) {
-		this.mediator = mediator;
-		this.selectionModel = selectionModel;
+	public GraphView(GraphTabPaneController tabPaneController) {
+		this.tabPaneController = tabPaneController;
+		this.selectionModel = new GraphViewSelectionModel(this);
 		selectionModel.getSelectedShapes().addListener(onSelectionChanged);
 	}
 	
@@ -157,12 +157,12 @@ public class GraphView extends Pane {
 			    // If said element is a vertex
 				ViewableVertex vertex = vertices.iterator().next();
 				// Display link if edge has a link
-				int linkId = vertex.getLink();
-				if (linkId != -1) {
+				VertexReference link = vertex.getLink();
+				if (link != null) {
 					MenuItem item = new MenuItem(LanguageManager.getInstance().get("ctx_open_graph"));
 					dynamicMenuListItems.add(item);
 					// set action to open new graph
-					item.setOnAction(event -> GraphView.this.mediator.openGraph(linkId));
+					item.setOnAction(event -> GraphView.this.tabPaneController.openGraph(link.getGraph()));
 					GraphView.this.contextMenu.getItems().add(menuIdx++, item);
 				}
 				menuIdx = addDynamicMenuItemsForActions(getFactory().getGraph().getVertexActions(vertex), contextMenu, menuIdx);

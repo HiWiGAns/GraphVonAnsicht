@@ -1,11 +1,5 @@
 package edu.kit.student.gui;
 
-import edu.kit.student.graphmodel.Edge;
-import edu.kit.student.graphmodel.Vertex;
-import edu.kit.student.objectproperty.GAnsProperty;
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
-import javafx.collections.SetChangeListener;
 import javafx.event.EventHandler;
 import javafx.geometry.BoundingBox;
 import javafx.geometry.Bounds;
@@ -17,7 +11,6 @@ import javafx.scene.shape.Rectangle;
 import javafx.scene.shape.Shape;
 import javafx.scene.shape.StrokeLineCap;
 
-import java.util.LinkedList;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -26,52 +19,16 @@ public class GraphViewSelectionController {
     private final GraphViewSelectionModel model;
     private final int MIN_CLICKBOUND_SIZE = 10;
     private final SelectionGestures rubberBand;
-    private final InformationView informationView;
-    private final InformationViewUpdater infoUpdater;
 
-    public GraphViewSelectionController(GraphViewSelectionModel model, GraphViewPaneStack panes, InformationView informationView) {
+    public GraphViewSelectionController(GraphViewSelectionModel model, GraphViewPaneStack panes) {
         this.model = model;
         this.rubberBand = new SelectionGestures(panes);
-        this.informationView = informationView;
-        infoUpdater = new InformationViewUpdater(panes.getGraphView());
-        model.getSelectedShapes().addListener(infoUpdater);
 
 }
     public SelectionGestures getRubberBand() {
         return rubberBand;
     }
 
-    private class InformationViewUpdater implements SetChangeListener<GAnsGraphElement> {
-
-        final ObservableList<GAnsProperty<?>> selectedItemProperties = FXCollections.observableList(new LinkedList<>());
-        final GraphView graphView;
-
-        public InformationViewUpdater(GraphView graphView) {
-            this.graphView = graphView;
-            informationView.setFocus(selectedItemProperties);
-        }
-
-        @Override
-        public void onChanged(Change<? extends GAnsGraphElement> change) {
-            GraphViewGraphFactory factory = graphView.getFactory();
-            // Urgh.. Add common interface for edge and vertex
-            if (change.wasAdded()) {
-                Edge edge = factory.getEdgeFromShape(change.getElementAdded());
-                if (edge != null)
-                    selectedItemProperties.addAll(edge.getProperties());
-                Vertex vertex = factory.getVertexFromShape(change.getElementAdded());
-                if (vertex != null)
-                    selectedItemProperties.addAll(vertex.getProperties());
-            } else if (change.wasRemoved()) {
-                Edge edge = factory.getEdgeFromShape(change.getElementRemoved());
-                if (edge != null)
-                    selectedItemProperties.removeAll(edge.getProperties());
-                Vertex vertex = factory.getVertexFromShape(change.getElementRemoved());
-                if (vertex != null)
-                    selectedItemProperties.removeAll(vertex.getProperties());
-            }
-        }
-    }
 
 
     private class SelectionGestures {
@@ -119,7 +76,6 @@ public class GraphViewSelectionController {
             @Override
             public void handle(MouseEvent event) {
                 menu.hide();
-                informationView.setFocus(infoUpdater.selectedItemProperties);
                 dragContext.mouseAnchorX = event.getX();
                 dragContext.mouseAnchorY = event.getY();
 

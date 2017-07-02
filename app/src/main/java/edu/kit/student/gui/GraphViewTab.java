@@ -1,7 +1,6 @@
 package edu.kit.student.gui;
 
 import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.control.Label;
 import javafx.scene.control.Tab;
@@ -36,35 +35,28 @@ public class GraphViewTab extends Tab {
 			searchBar = new ToolBar(errLabel);
 		}
 		this.content.getChildren().addAll(searchBar, panes.getRoot());
-		searchBar.visibleProperty().addListener((observable, oldValue, newValue) -> System.out.println(newValue));
+
+		ChangeListener<TabPane> addSearchBarToggle = (observable, oldValue, newValue) -> {
+            // Unset key binding for old tab
+            if (oldValue != null)
+                oldValue.setOnKeyPressed(null);
+
+            // Set key binding for new tab
+            if (newValue != null) {
+                newValue.setOnKeyPressed(event -> {
+                    if (event.isControlDown() && event.getCode().equals(KeyCode.F)) {
+                        searchBar.setVisible(!searchBar.isVisible());
+                        searchBar.setManaged(!searchBar.isManaged());
+                    }
+                });
+            }
+        };
+
 		this.tabPaneProperty().addListener(addSearchBarToggle);
 		assert getTabPane() == null;
 
-		this.tabPaneProperty().addListener(new ChangeListener<TabPane>() {
-			@Override
-			public void changed(ObservableValue<? extends TabPane> observable, TabPane oldValue, TabPane newValue) {
-			    System.out.println("TEEEEEEEEST");
-//				newValue.focusedProperty().addListener((ObservableValue<? extends Boolean> obs, Boolean old, Boolean newv) -> {
-//					panes.getRoot().requestFocus();
-//				});
-			}
-		});
 		this.setContent(content);
 	}
-
-	private ChangeListener<TabPane> addSearchBarToggle = new ChangeListener<TabPane>() {
-		@Override
-		public void changed(ObservableValue<? extends TabPane> observable, TabPane oldValue, TabPane newValue) {
-		    if (oldValue != null)
-                oldValue.setOnKeyPressed(null);
-            newValue.setOnKeyPressed(event -> {
-				if (event.isControlDown() && event.getCode().equals(KeyCode.F)) {
-					searchBar.setVisible(!searchBar.isVisible());
-					searchBar.setManaged(!searchBar.isManaged());
-				}
-			});
-		}
-	};
 
 	public GraphViewPaneStack getGraphViewPanes() {
 		return panes;

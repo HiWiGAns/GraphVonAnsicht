@@ -1,17 +1,24 @@
 package edu.kit.student.graphmodel.viewable;
 
-import java.util.*;
-import java.util.Map.Entry;
-import java.util.stream.Collectors;
-
 import edu.kit.student.graphmodel.DefaultVertex;
+import edu.kit.student.graphmodel.VertexReference;
 import edu.kit.student.graphmodel.builder.GraphBuilderException;
 import edu.kit.student.graphmodel.builder.GraphBuilderException.BuilderType;
 import edu.kit.student.graphmodel.builder.IEdgeBuilder;
 import edu.kit.student.graphmodel.builder.IGraphBuilder;
 import edu.kit.student.graphmodel.builder.IVertexBuilder;
 import edu.kit.student.graphmodel.directed.DefaultDirectedEdge;
-import edu.kit.student.graphmodel.directed.DefaultDirectedGraph;
+
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 public class DirectedViewableGraphBuilder implements IGraphBuilder {
 
@@ -179,7 +186,7 @@ public class DirectedViewableGraphBuilder implements IGraphBuilder {
 		for (DirectedViewableGraphBuilder sb : subraphBuilders) {
 			DirectedViewableGraph subgraph = sb.build();
 			DefaultVertex v = new DefaultVertex(subgraph.getName(), subgraph.getName());
-			v.setLink(subgraph.getID());
+			v.setLink(new VertexReference(subgraph, null));
 			subGraphs.add(subgraph);
 			vertices.add(v);
 			if (edgesFromGraphs.containsKey(sb)) {
