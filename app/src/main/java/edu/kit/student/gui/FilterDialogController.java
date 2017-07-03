@@ -145,8 +145,8 @@ public class FilterDialogController extends Dialog<ButtonType> {
         ApplicationSettings settings = ApplicationSettings.getInstance();
         settings.setProperty(Props.filterdialog_x.name(), this.getX());
         settings.setProperty(Props.filterdialog_y.name(), this.getY());
-        settings.setProperty(Props.filterdialog_width.name(), stage.getWidth());
-        settings.setProperty(Props.filterdialog_height.name(), stage.getHeight());
+        settings.setProperty(Props.filterdialog_width.name(), getDialogPane().getWidth());
+        settings.setProperty(Props.filterdialog_height.name(), getDialogPane().getHeight());
         settings.saveSettings();
     }
 
