@@ -6,6 +6,7 @@ import edu.kit.student.plugin.PluginManager;
 import edu.kit.student.plugin.VertexFilter;
 import edu.kit.student.util.LanguageManager;
 import javafx.beans.value.ChangeListener;
+import javafx.collections.ListChangeListener;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.geometry.Insets;
@@ -83,11 +84,22 @@ public class FilterDialogController extends Dialog<ButtonType> {
         fillDialog();
         this.setDialogPane(dialogPane);
 
-        // Disable apply button when earlier disabled filter are enabled.
+        // Disable apply (and layout) button when needed as described in shouldDisable* described.
         final Button btnApply = (Button) getDialogPane().lookupButton(ButtonType.APPLY);
-        model.needLayoutProperty.addListener((observable, oldValue, newValue) -> btnApply.setDisable(newValue));
-        btnApply.setDisable(model.needLayoutProperty.getValue());
+        final Button btnApplyAndLayout = (Button) getDialogPane().lookupButton(FilterDialogController.APPLYANDLAYOUT);
+        btnApply.setDisable(shouldDisableBtnApply());
+        btnApplyAndLayout.setDisable(shouldDisableBtnApplyAndLayout());
 
+        ListChangeListener<Object> checkApplyBtn = observable -> {
+            btnApply.setDisable(shouldDisableBtnApply());
+            btnApplyAndLayout.setDisable(shouldDisableBtnApplyAndLayout());
+        };
+        model.observableEdgeFilters().addListener(checkApplyBtn);
+        model.observableVertexFilters().addListener(checkApplyBtn);
+
+        model.needLayoutProperty.addListener((observable, oldValue, newValue) -> btnApply.setDisable(shouldDisableBtnApply()));
+
+        // Disable ad deselect the fix vertex check box if appropriate.
         model.layoutCanOptimizeProperty.addListener((observable, oldValue, newValue)
                 -> cbOptimize.setDisable(model.canOptimize()));
         model.needLayoutProperty.addListener((observable, oldValue, newValue) -> {
@@ -98,6 +110,22 @@ public class FilterDialogController extends Dialog<ButtonType> {
         cbOptimize.setDisable(!model.layoutCanOptimizeProperty.getValue());
         cbOptimize.selectedProperty().addListener((observable, oldValue, newValue) -> model.setOptimize(newValue));
         cbOptimize.setSelected(model.optimize());
+    }
+
+    /**
+     * Returns if btnApply should be disabled.
+     * @return true if btnApply should be disabled, false otherwise.
+     */
+    private boolean shouldDisableBtnApply() {
+        return model.needLayoutProperty.get() || !model.changedSinceBackup();
+    }
+
+    /**
+     * Returns if btnApplyAndLayout should be disabled.
+     * @return true if btnApplyAndLayout should be disabled, false otherwise.
+     */
+    private boolean shouldDisableBtnApplyAndLayout() {
+        return !model.changedSinceBackup();
     }
 
     public static FilterDialogController showDialog(FilterModel model) {

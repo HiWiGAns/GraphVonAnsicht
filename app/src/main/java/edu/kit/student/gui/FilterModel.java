@@ -32,7 +32,7 @@ public class FilterModel {
 
     private final ObservableList<EdgeFilter> eFilter = FXCollections.observableArrayList();
 
-    public FilterModel() {
+    FilterModel() {
         this(new LinkedList<>(), new LinkedList<>());
     }
 
@@ -42,13 +42,13 @@ public class FilterModel {
      * @param vertexFilters the active vertex filters
      * @param edgeFilters the active edge filters
      */
-    public FilterModel(List<VertexFilter> vertexFilters, List<EdgeFilter> edgeFilters) {
+    FilterModel(List<VertexFilter> vertexFilters, List<EdgeFilter> edgeFilters) {
         vFilter.addAll(vertexFilters);
         eFilter.addAll(edgeFilters);
     }
 
-    public final BooleanProperty layoutCanOptimizeProperty = new SimpleBooleanProperty(true);
-    public final BooleanProperty needLayoutProperty = new SimpleBooleanProperty(true);
+    final BooleanProperty layoutCanOptimizeProperty = new SimpleBooleanProperty(true);
+    final BooleanProperty needLayoutProperty = new SimpleBooleanProperty(true);
 
     /**
      * Returns true if the at this state the filter could be applied, while fixing the vertex positions.
@@ -56,7 +56,7 @@ public class FilterModel {
      * vertices.
      * @return if the filter could be applied, while fixing the vertex positions.
      */
-    public boolean canOptimize() {
+    boolean canOptimize() {
         return layoutCanOptimizeProperty.get() && !needLayoutProperty.get();
     }
 
@@ -69,7 +69,7 @@ public class FilterModel {
      * Indicates if the filters should be applied without relayout, the edges should be optimized.
      * @return true if the edges should be optimized, false otherwise
      */
-    public boolean optimize() {
+    boolean optimize() {
         return optimize;
     }
 
@@ -77,44 +77,44 @@ public class FilterModel {
      * Sets whether the edges should be optimized when applying the filters without relayout
      * @param optimize the indicator if edges should be optimized
      */
-    public void setOptimize(boolean optimize) {
+    void setOptimize(boolean optimize) {
         this.optimize = optimize;
     }
 
-    public ObservableList<VertexFilter> observableVertexFilters() {
+    ObservableList<VertexFilter> observableVertexFilters() {
         return vFilter;
     }
 
-    public ObservableList<EdgeFilter> observableEdgeFilters() {
+    ObservableList<EdgeFilter> observableEdgeFilters() {
         return eFilter;
     }
 
-    public List<VertexFilter> getVertexFilters() {
+    List<VertexFilter> getVertexFilters() {
         return vFilter;
     }
 
-    public List<EdgeFilter> getEdgeFilters() {
+    List<EdgeFilter> getEdgeFilters() {
         return eFilter;
     }
 
-    public void backup() {
+    void backup() {
         this.lastBackupVFilter.clear();
         this.lastBackupVFilter.addAll(getVertexFilters());
         this.lastBackupEFilter.clear();
         this.lastBackupEFilter.addAll(getEdgeFilters());
     }
 
-    public boolean changedSinceBackup() {
+    boolean changedSinceBackup() {
         HashSet<VertexFilter> vertexFilterHashSet = new HashSet<>(getVertexFilters());
         HashSet<EdgeFilter> edgeFilterHashSet = new HashSet<>(getEdgeFilters());
         return !(vertexFilterHashSet.equals(getLastBackupVFilter()) && edgeFilterHashSet.equals(getLastBackupEFilter()));
     }
 
-    public Set<VertexFilter> getLastBackupVFilter() {
+    Set<VertexFilter> getLastBackupVFilter() {
         return lastBackupVFilter;
     }
 
-    public Set<EdgeFilter> getLastBackupEFilter() {
+    Set<EdgeFilter> getLastBackupEFilter() {
         return lastBackupEFilter;
     }
 }
