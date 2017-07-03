@@ -56,7 +56,8 @@ public class MethodGraph extends JoanaGraph {
     private JoanaCollapser collapser;
 
     private Map<Integer, Set<InterproceduralEdge>> interprocEdges = new HashMap<>();
-    private LayoutedGraph layoutedGraph = null;
+    private LayoutedGraph wholeLayoutedGraph = null;
+    private LayoutedGraph lastLayoutedGraph = null;
 
     public MethodGraph(Set<JoanaVertex> vertices, Set<JoanaEdge> edges, 
             String methodName) {
@@ -98,11 +99,11 @@ public class MethodGraph extends JoanaGraph {
      *
      * @param layoutedGraph the given layoutedGraph to be set
      */
-    public void setLayoutedGraph(LayoutedGraph layoutedGraph){
+    public void setWholeLayoutedGraph(LayoutedGraph layoutedGraph){
         if(layoutedGraph == null)
             throw new IllegalArgumentException("The given layouted graph must not be null!");
-        if(this.layoutedGraph == null)
-            this.layoutedGraph = layoutedGraph;
+        if(this.wholeLayoutedGraph == null)
+            this.wholeLayoutedGraph = layoutedGraph;
     }
 
     /**
@@ -110,8 +111,18 @@ public class MethodGraph extends JoanaGraph {
      *
      * @return the {@link LayoutedGraph} that represents this MethodGraph
      */
-    public LayoutedGraph getLayoutedGraph() {
-        return layoutedGraph;
+    public LayoutedGraph getWholeLayoutedGraph() {
+        return wholeLayoutedGraph;
+    }
+
+    //set the actual representation of the graph
+    public void setLastLayoutedGraph(LayoutedGraph layoutedGraph){
+        this.lastLayoutedGraph = layoutedGraph;
+    }
+
+    //get the actual representation of the graph
+    public LayoutedGraph getLastLayoutedGraph(){
+        return this.lastLayoutedGraph;
     }
 
     /**
@@ -149,7 +160,9 @@ public class MethodGraph extends JoanaGraph {
     Set<InterproceduralEdge> getNotFilteredInterproceduralEdges(){
     	Set<InterproceduralEdge> allIEs = new HashSet<>();
     	this.interprocEdges.values().forEach(allIEs::addAll);
-    	return this.removeFilteredInterproceduralEdges(allIEs);
+    	return allIEs.stream().filter(ie -> this.getActiveVertexFilter().stream() //removes whole IE(+dummy) only if de normal or dummy vertex has been removed
+                .allMatch(f->f.getPredicate().negate().test(ie.getDummyVertex()) && f.getPredicate().negate().test(ie.getNormalVertex())))
+                .collect(Collectors.toSet());
     }
     
     /**
@@ -165,12 +178,14 @@ public class MethodGraph extends JoanaGraph {
      * @param interprocEdges interprocedural edges to be added to the graph
      */
     void addInterproceduralEdges(Set<InterproceduralEdge> interprocEdges){
-        Set<InterproceduralEdge> notFilteredIEs = this.removeFilteredInterproceduralEdges(interprocEdges);
-    	for(InterproceduralEdge ie : notFilteredIEs){//add edges to graph
-            assert(!ie.getPath().getNodes().isEmpty());
-            if(!this.graph.contains(ie.getNormalVertex())) continue; //normal vertex could be contained in a collapsed vertex(the dummy will be automatically added to the collapsed vertex as well, IE must not be drawn)
+        Set<InterproceduralEdge> notFilteredIEs = this.removeFilteredInterproceduralEdges(interprocEdges); //removes edges with no dummy or normal vertex being present in this graph
+
+    	for(InterproceduralEdge ie : notFilteredIEs) {//add edges to graph
             this.graph.addVertex(ie.getDummyVertex());
-    		this.graph.addEdge(ie);
+            if (this.getActiveEdgeFilter().stream().allMatch(f -> f.getPredicate().negate().test(ie))){ //only add edge if it does not match all filters
+                assert (!ie.getPath().getNodes().isEmpty());
+                this.graph.addEdge(ie);
+            }
     	}
     }
     
@@ -183,10 +198,8 @@ public class MethodGraph extends JoanaGraph {
     	Set<InterproceduralEdge> allIEs = new HashSet<>();
     	this.interprocEdges.values().forEach(allIEs::addAll);
     	for(InterproceduralEdge ie : allIEs){
-    	    if(this.graph.contains(ie.getDummyVertex()) && this.graph.contains(ie.getNormalVertex())) {
-                this.graph.removeEdge(ie);
-                this.graph.removeVertex(ie.getDummyVertex());
-            }
+    	    if(this.graph.getEdgeSet().contains(ie)) this.graph.removeEdge(ie); //TODO: maybe add contains(edge) to DefaultDirectedGraph ?
+    	    if(this.graph.contains(ie.getDummyVertex())) this.graph.removeVertex(ie.getDummyVertex());
         }
     }
     

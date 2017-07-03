@@ -5,6 +5,8 @@ import edu.kit.student.graphmodel.DirectedSupplementEdgePath;
 import edu.kit.student.graphmodel.EdgePath;
 import edu.kit.student.graphmodel.Vertex;
 import edu.kit.student.graphmodel.directed.DirectedEdge;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -22,11 +24,13 @@ public class LayoutedGraph {
     private Set<Vertex> vertices;
     private Set<DirectedEdge> edges;
     private Set<DirectedSupplementEdgePath> paths;
+    private final Logger logger = LoggerFactory.getLogger(LayoutedGraph.class);
 
     public LayoutedGraph(Set<Vertex> vertices, Set<DirectedEdge> edges, Set<DirectedSupplementEdgePath> paths){
         this.vertices = new HashSet<>(vertices);
         this.edges = new HashSet<>(edges);
         this.paths = new HashSet<>(paths);
+        logger.info("Created LayoutedGraph with " + vertices.size() + " vertices, " + edges.size() + " edges, and " + paths.size() + " paths!");
         checkValidity();
     }
 

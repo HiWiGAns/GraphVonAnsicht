@@ -2,6 +2,7 @@ package edu.kit.student.joana.methodgraph;
 
 import edu.kit.student.graphmodel.DefaultVertex;
 import edu.kit.student.graphmodel.DirectedSupplementEdgePath;
+import edu.kit.student.graphmodel.Edge;
 import edu.kit.student.graphmodel.EdgePath;
 import edu.kit.student.graphmodel.FastGraphAccessor;
 import edu.kit.student.graphmodel.Vertex;
@@ -39,6 +40,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -50,10 +52,12 @@ import java.util.stream.Collectors;
 public class MethodGraphLayout extends LayoutAlgorithm<MethodGraph> {
 	
     private final Logger logger = LoggerFactory.getLogger(MethodGraphLayout.class);
+    //private SugiyamaLayoutAlgorithm<FieldAccessGraph> sugiyamaLayoutAlgorithmFA; //TODO: necessary to create an extra SugiyamaLayoutAlgorithm for drawing FieldAccessGraphs (otherwise reset assigner)
 	private SugiyamaLayoutAlgorithm<MethodGraph> sugiyamaLayoutAlgorithm;
 	private Integer dummyId = -1;
 	
 	public MethodGraphLayout() {
+		//this.sugiyamaLayoutAlgorithmFA = new SugiyamaLayoutAlgorithm<>();
 		this.sugiyamaLayoutAlgorithm = new SugiyamaLayoutAlgorithm<>();
 		fixesVertices().addListener(((observable, oldValue, newValue) -> {
 			if (sugiyamaLayoutAlgorithm.fixesVertices().getValue() != newValue)
@@ -77,6 +81,11 @@ public class MethodGraphLayout extends LayoutAlgorithm<MethodGraph> {
 	 * @param graph The {@link MethodGraph} to layout.
 	 */
 	public void layout(MethodGraph graph) {
+		logger.debug("fixVertices: " + this.fixesVertices().getValue());
+		if(this.fixesVertices().getValue()){
+			this.redrawEdges(graph);
+			return;
+		}
 		logger.info("Graph before: Vertices: "+graph.getVertexSet().size()+", Edges: "+graph.getEdgeSet().size());
 		graph.invalidateProperties(); //invalidates all saved properties of the methodGraph's data structures that have to be reset before relayouting
 		this.layoutFieldAccessGraphs(graph);
@@ -129,13 +138,133 @@ public class MethodGraphLayout extends LayoutAlgorithm<MethodGraph> {
 		sugiyamaLayoutAlgorithm.layout(graph);
 		
 		logger.info("Graph after: Vertices: "+graph.getVertexSet().size()+", Edges: "+graph.getEdgeSet().size());
-		expandFieldAccesses(graph, collapsedFAs);
+		expandFieldAccesses(graph, collapsedFAs, false);
 		collapsedFAs.forEach(this::checkIntegrity); //makes more sense here because expandFAs sets the coordinates of previous layouted FA-vertices, and -edges adequately
 
-		collapsedFAs.forEach(fa->drawEdgesNew(graph, fa));	//new version
+		collapsedFAs.forEach(fa->redrawFAEdges(graph, fa));	//new version
 		
 		//draws interprocedural vertices of this graph. 
-		drawInterproceduralEdges(graph);
+		drawInterproceduralEdges(graph, false);
+
+		this.setLastLayoutedGraph(graph); //sets the layouted representation of this graph
+
+		sugiyamaLayoutAlgorithm.setLayerAssigner(new LayerAssigner()); //replace actual assigner ba one without constraints (actual for layouting FieldAccessgraphs)
+	}
+
+	/**
+	 * Redraws edges just with given methodgraph and uses its edges and vertices, not a representation of a yet layouted graph!!!
+	 * returns if no coordinates for vertices are set yet.
+	 * Redraws edges of the graph, in the FieldAccesses and completely redraws interprocedural edges and their dummies
+	 *
+	 */
+	public void redrawEdges(MethodGraph mg){
+		//printGraph(mg);
+		//collapse fas
+		List<FieldAccess> collapsedFAs = mg.collapseFieldAccesses();
+		//remove interproc edges(eventually use this step here to just redraw necessary interprocedural edges and let the dummy at its position)
+		mg.removeInterproceduralEdges();
+		//redraw graph edges
+		LayoutedGraph lg = mg.getLastLayoutedGraph();
+		if(lg == null) {
+			System.out.println("LayoutedGraph is null -> returning");
+			return;
+		}
+
+		Set<Vertex> vertices = new HashSet<>();
+		Set<DirectedEdge> edges = new HashSet<>();
+
+
+
+		vertices.addAll(mg.getVertexSet());
+		edges.addAll(mg.getEdgeSet()); //graph edges. As FieldAccesses are collapsed, it contains edges to the FieldAcces-Vertex, not into the FA nor in the FA
+
+		Set<Integer> edgeIDs = edges.stream().map(Edge::getID).collect(Collectors.toSet());
+		Set<Integer> vertexIDs = vertices.stream().map(Vertex::getID).collect(Collectors.toSet());
+
+		Set<DirectedEdge> lgEdges = lg.getEdges();
+		Set<DirectedSupplementEdgePath> paths = lg.getPaths();
+		Set<Integer> pathReplacedEdgeIDs = paths.stream().map(p->p.getReplacedEdge().getID()).collect(Collectors.toSet());
+
+		//remove paths that have no replaced edge in the current method graph(through filtering)
+		Set<DirectedSupplementEdgePath> notFilteredPaths = new HashSet<>(paths);
+		for(DirectedSupplementEdgePath p : paths){
+			if(!vertexIDs.contains(p.getReplacedEdge().getSource().getID()) || !vertexIDs.contains(p.getReplacedEdge().getTarget().getID())) {// at least one vertex has been filtered
+				notFilteredPaths.remove(p);
+				continue;
+			}
+			if(!edgeIDs.contains(p.getReplacedEdge().getID())) //remove path if its replaced edge is not in the graph edges set
+				notFilteredPaths.remove(p);
+		}
+
+		Set<DirectedEdge> nonPathEdges = edges.stream().filter(e->!pathReplacedEdgeIDs.contains(e.getID())).collect(Collectors.toSet());
+
+		this.sugiyamaLayoutAlgorithm.redrawEdges(vertices, nonPathEdges, notFilteredPaths);
+
+		//expand fas
+		expandFieldAccesses(mg, collapsedFAs, true);
+
+		//TODO: this is normally not necessary, but from what reason ever, this just works so:
+		for(DirectedSupplementEdgePath p : notFilteredPaths){
+			for(DirectedEdge e : mg.getEdgeSet()){
+				if(Objects.equals(p.getReplacedEdge().getID(), e.getID())){
+					EdgePath path = e.getPath();
+					if(path.getNodes().isEmpty()) {
+						path.clear();
+						p.getReplacedEdge().getPath().getNodes().forEach(path::addPoint);
+					}
+				}
+			}
+		}
+		//TODO: this is normally unnecessarry as well. Anyhow the edgepath of the normal edges are not set through the edgedrawer.
+		for(DirectedEdge le : lgEdges){
+			for(DirectedEdge e : mg.getEdgeSet()){
+				if(Objects.equals(le.getID(), e.getID())){
+					EdgePath path = e.getPath();
+					if(path.getNodes().isEmpty()) {
+						path.clear();
+						le.getPath().getNodes().forEach(path::addPoint);
+					}
+				}
+			}
+		}
+
+		/*for(DirectedEdge e : mg.getEdgeSet()){
+			System.out.println("edge(" + e.getID() + ")[" + e.getSource().getName() + "->" + e.getTarget().getName() + "],path: " + e.getPath().getNodes().size());
+		}
+
+		for(DirectedSupplementEdgePath p : notFilteredPaths){
+			System.out.println("path(" + p.getReplacedEdge().getID() + "),size: " + p.getReplacedEdge().getPath().getNodes().size());
+		}
+		*/
+
+		//printGraph(mg);
+		collapsedFAs.forEach(this::checkIntegrity);
+		//redraw fa edges
+		collapsedFAs.forEach(fa->redrawFAEdges(mg, fa));
+		//draw interproc edges
+		drawInterproceduralEdges(mg, true);
+	}
+
+	private void printGraph(MethodGraph mg){
+		Set<JoanaVertex> vertices = mg.getVertexSet();
+		Set<JoanaEdge> edges = mg.getEdgeSet();
+		List<FieldAccess> fas = mg.getFieldAccesses();
+		System.out.print("Vertices: ");
+		vertices.forEach(v->System.out.print("(" + v.getName() + "), pos:[" + v.getX() + "," + v.getY() + "], size:[" + v.getSize().x + "," + v.getSize().y + "]; "));
+		System.out.print("\n");
+		System.out.print("Edges: ");
+		edges.forEach(e->System.out.print("(" + e.getID() + ")[" + e.getSource().getName() + "->" + e.getTarget().getName() + "] " + getPathString(e) + "; "));
+		System.out.print("\n");
+		System.out.print("FieldAccesses: ");
+		fas.forEach(fa->System.out.print("pos:(" + fa.getX() + "," + fa.getY() + "), size:(" + fa.getSize().x +"," + fa.getSize().y + "); "));
+		System.out.print("\n");
+	}
+
+	private String getPathString(JoanaEdge e){
+		StringBuilder ret = new StringBuilder();
+		List<DoublePoint> points = e.getPath().getNodes();
+		points.forEach(p->ret.append("[").append(p.x).append(",").append(p.y).append("] "));
+		return ret.toString();
 	}
 
 	/**
@@ -164,48 +293,25 @@ public class MethodGraphLayout extends LayoutAlgorithm<MethodGraph> {
 		LayoutedGraph lg = this.sugiyamaLayoutAlgorithm.exportLayoutedGraph();
 
 		//save the exported graph in the given methodgraph
-		graph.setLayoutedGraph(lg);
+		graph.setWholeLayoutedGraph(lg);
+		graph.setLastLayoutedGraph(lg);
 
 	}
 
-	/**
-	 * Redraws the edges of the given {@link MethodGraph}.
-	 * Therefore uses the {@link LayoutedGraph} of the given graph.
-	 *
-	 *
-	 * @param graph graph to relayout its edges
-	 */
-	public void relayoutEdges(MethodGraph graph){
-		LayoutedGraph lg = graph.getLayoutedGraph();
-		if(lg == null)
-			return;
-		Set<Vertex> vertices = lg.getVertices();
-		Set<DirectedEdge> edges = lg.getEdges();
-		Set<DirectedSupplementEdgePath> paths = lg.getPaths();
-
-		//remove interprocedural edges from edgeset and their dummies from vertex set
-		graph.removeInterproceduralEdges();
-
-		//(fieldAccesses should still be collapsed ???) so filter in the fieldAccesses and relayout the edges in there!
-		List<FieldAccess> fas = graph.getFieldAccesses(); //FieldAccesses should be already collapsed at this moment.
-		fas.forEach(fa->drawEdgesNew(graph,fa)); //like in this.layout(). Normally applies filtering automatically
-
-		//call drawEdgesNew with vertices, edges, paths
-		this.sugiyamaLayoutAlgorithm.drawEdgesNew(vertices, edges, paths);
-
-		//draw the not filtered ie's new,(let the dummies even if the edges are filtered!?!)TODO: ALWAYS let the dummies of an interprocedural edge even the edge itself is filtered!!!
-		drawInterproceduralEdges(graph);
+	private void setLastLayoutedGraph(MethodGraph graph){
+		LayoutedGraph lg = this.sugiyamaLayoutAlgorithm.exportLayoutedGraph();
+		graph.setLastLayoutedGraph(lg);
 	}
-	
+
 	/**
 	 * Layouts every single FieldAccessGraph.
 	 * Also sets the sizes of the vertex representing this FieldAccessGraph appropriate.
 	 */
 	private void layoutFieldAccessGraphs(MethodGraph graph){
-	    SugiyamaLayoutAlgorithm<FieldAccessGraph> fieldAccessSugAlgo = new SugiyamaLayoutAlgorithm<>();
 		for(FieldAccess fa : graph.getFieldAccesses()){
 			FieldAccessGraph fag = fa.getGraph();
-			fieldAccessSugAlgo.layout(fag);
+			sugiyamaLayoutAlgorithm.layout(fag);
+			//this.sugiyamaLayoutAlgorithmFA.layout(fag);
 		}
 	}
 
@@ -242,7 +348,7 @@ public class MethodGraphLayout extends LayoutAlgorithm<MethodGraph> {
 	 * Draws all edges contained in a FieldAccess and coming into and going out of a FieldAccess new.
 	 * The coordinates of vertices stay the same.
 	 */
-	private void drawEdgesNew(MethodGraph graph, FieldAccess fa){
+	private void redrawFAEdges(MethodGraph graph, FieldAccess fa){
 		//maybe split more functionality into private methods
 		double boxYtop = fa.getY();
 		double boxYbottom = fa.getY() + fa.getSize().y;
@@ -327,7 +433,7 @@ public class MethodGraphLayout extends LayoutAlgorithm<MethodGraph> {
 				layerToAddDummy = layerYvals.size() - 1;	//add to last layer
 				yAddition = - borderDummySize.y;
 			}else{
-				assert(false);
+				throw new IllegalStateException("Could not find an edge coming in or going out of the FieldAccess-Box");
 			}
 			tempDummy = new JoanaDummyVertex("", "", getDummyID(), borderDummySize);
 			tempDummy.setX((boxCross.x - borderDummySize.x / 2));
@@ -533,7 +639,7 @@ public class MethodGraphLayout extends LayoutAlgorithm<MethodGraph> {
 				source = edgeToDummy.get(e.getID());
 				target = e.getTarget();
 			}else{
-				assert(false);
+				throw new IllegalStateException("Could not find an edge coming in or going out of the FieldAccess-Box");
 			}
 			int index1 = getIndex(layerYvals, start);
 			int index2 = getIndex(layerYvals, end);
@@ -588,13 +694,13 @@ public class MethodGraphLayout extends LayoutAlgorithm<MethodGraph> {
 			vertices.add(edge.getTarget());
 		}
 		for(DirectedSupplementEdgePath p : paths){
-			//vertices.addAll(p.getDummyVertices());
+			//vertices.addAll(p.getDummyVertices()); //TODO: necessary ?
 			vertices.add(p.getReplacedEdge().getSource());
 			vertices.add(p.getReplacedEdge().getTarget());
-			//edges.addAll(p.getSupplementEdges());
+			//edges.addAll(p.getSupplementEdges()); //TODO: necessary ?
 			edges.remove(p.getReplacedEdge());//should not be in here !
 		}
-		this.sugiyamaLayoutAlgorithm.drawEdgesNew(vertices, edges, paths);
+		this.sugiyamaLayoutAlgorithm.redrawEdges(vertices, edges, paths);
 		//now add the additional EdgePath to fromOutEdges
 		for(JoanaEdge e : fromOutEdges){
 			List<DoublePoint> points = e.getPath().getNodes();
@@ -690,10 +796,10 @@ public class MethodGraphLayout extends LayoutAlgorithm<MethodGraph> {
      * Vertices of kind FRMI, FRMO, EXIT have dummies on top, every other vertex on their bottom line
      *
      * Whether the dummy vertices are drawn left or right of the normal vertex depends on the direction of the edge that connects them.
-     * InterproceduralEdges going into a normal vertex are drawn left of the normal vertex, IE's with incoming edges are drawn on the right.
+     * InterproceduralEdges going into a normal vertex are drawn left of the normal vertex, IE's coming out of a normal vertex are drawn to the right.
 	 * 
 	 */
-	private void drawInterproceduralEdges(MethodGraph mg){
+	private void drawInterproceduralEdges(MethodGraph mg, boolean fixDummyPositions){
 		Map<Integer, Set<InterproceduralEdge>> idToIEs = mg.getInterproceduralEdges();
 		Map<Integer, Set<InterproceduralEdge>> newIdToIEs = new HashMap<>();
 		//adjust each normal vertex' interprocedural edges depending on actual vertex filter settings
@@ -708,84 +814,114 @@ public class MethodGraphLayout extends LayoutAlgorithm<MethodGraph> {
             if(normalVertex.getNodeKind() == JoanaVertex.VertexKind.FRMI || normalVertex.getNodeKind() == JoanaVertex.VertexKind.FRMO || normalVertex.getNodeKind() == JoanaVertex.VertexKind.EXIT){
                 actPosition = Position.TOP;
             }
-            this.drawInterproceduralEdgesAtPosition(ies,actPosition);
+            //split interprocedural edges in isolated(edge should not be drawn, just vertex) and non isolated(edge should also be drawn)
+			Set<InterproceduralEdge> nonIsolatedVertices = getNonIsolatedIEs(mg, ies);
+
+            this.drawInterproceduralEdgesAtPosition(ies, nonIsolatedVertices, actPosition,fixDummyPositions);
             mg.addInterproceduralEdges(ies);
         }
 	}
 
+	//first list: original ies
+	//second, third lists: empty lists to fill with either isolated or regular connected vertices.
+	//the union of both subsets of ies should be ies again.
+	private Set<InterproceduralEdge> getNonIsolatedIEs(MethodGraph mg, Set<InterproceduralEdge> ies){
+		List<EdgeFilter> filters = mg.getActiveEdgeFilter();
+		Set<InterproceduralEdge> isolatedIEs = ies.stream().filter(e->filters.stream().anyMatch(f->f.getPredicate().test(e))).collect(Collectors.toSet());
+		Set<InterproceduralEdge> nonIsolatedIEs = ies.stream().filter(e->filters.stream().allMatch(f->f.getPredicate().negate().test(e))).collect(Collectors.toSet());
+		assert(ies.size() == isolatedIEs.size() + nonIsolatedIEs.size());
+		return nonIsolatedIEs;
+	}
+
+
 	//draws interprocedural edges, for every edge: set its edgepath and the position of its dummy vertex
     //all interprocedural edges of this set have the same normal vertex
-	private void drawInterproceduralEdgesAtPosition(Set<InterproceduralEdge> ieSet, Position position){
-	    assert(!ieSet.isEmpty());
-	    ieSet.forEach(ie->ie.getPath().clear()); //clears edgepath before relayouting
-	    JoanaVertex normalVertex = ieSet.iterator().next().getNormalVertex();
-        Set<InterproceduralEdge> sourceIEs = ieSet.stream().filter(ie->ie.getDummyLocation() == InterproceduralEdge.DummyLocation.SOURCE).collect(Collectors.toSet());
-        Set<InterproceduralEdge> targetIEs = ieSet.stream().filter(ie->ie.getDummyLocation() == InterproceduralEdge.DummyLocation.TARGET).collect(Collectors.toSet());
-        double leftEdgeDist = 0;
-        double rightEdgeDist = 0;
+	private void drawInterproceduralEdgesAtPosition(Set<InterproceduralEdge> allIEs, Set<InterproceduralEdge> nonIsolatedDummies, Position position, boolean fixDummyPositions){
+	    assert(!allIEs.isEmpty()); //TODO: assertion necessary or just return if set is empty ?
+	    allIEs.forEach(ie->ie.getPath().clear()); //clears edgepaths before relayouting
+	    JoanaVertex normalVertex = allIEs.iterator().next().getNormalVertex(); //normal vertex is the same for all interprocedural edges in this method
+        Set<InterproceduralEdge> sourceIEs = allIEs.stream().filter(ie->ie.getDummyLocation() == InterproceduralEdge.DummyLocation.SOURCE).collect(Collectors.toSet());
+        Set<InterproceduralEdge> targetIEs = allIEs.stream().filter(ie->ie.getDummyLocation() == InterproceduralEdge.DummyLocation.TARGET).collect(Collectors.toSet());
+        assert(sourceIEs.size() + targetIEs.size() == allIEs.size());
+
+        int nonIsolatedSourceDummiesCount =  (int)nonIsolatedDummies.stream().filter(ie -> ie.getDummyLocation() == InterproceduralEdge.DummyLocation.SOURCE).count();
+		int nonIsolatedTargetDummiesCount =  (int)nonIsolatedDummies.stream().filter(ie -> ie.getDummyLocation() == InterproceduralEdge.DummyLocation.TARGET).count();
+		assert(nonIsolatedSourceDummiesCount + nonIsolatedTargetDummiesCount == nonIsolatedDummies.size());
+
+        double leftEdgeDist = 0;//vertical distance between 2 edges on left side (asserting that all dummies have the same size)
+        double rightEdgeDist = 0;//vertical distance between 2 edges on right side (asserting that all dummies have the same size)
         if(!sourceIEs.isEmpty()){
-            leftEdgeDist = (normalVertex.getSize().y - sourceIEs.iterator().next().getDummyVertex().getSize().y) / (sourceIEs.size()+1);//vertical distance between 2 edges on left side (asserting that all dummies have the same size)
+            leftEdgeDist = (normalVertex.getSize().y - sourceIEs.iterator().next().getDummyVertex().getSize().y) / (nonIsolatedSourceDummiesCount + 1);
         }
         if(!targetIEs.isEmpty()){
-            rightEdgeDist = (normalVertex.getSize().y - targetIEs.iterator().next().getDummyVertex().getSize().y) / (targetIEs.size()+1);//vertical distance between 2 edges on right side (asserting that all dummies have the same size)
+            rightEdgeDist = (normalVertex.getSize().y - targetIEs.iterator().next().getDummyVertex().getSize().y) / (nonIsolatedTargetDummiesCount + 1);
         }
         double xVal = normalVertex.getX();
         double yVal;
         int idx = 1; //number of IE in the loop. First one has number 1!
         for(InterproceduralEdge ie : sourceIEs){//draw IE's with source dummy to the left of the normalVertex
             JoanaVertex dummyVertex = ie.getDummyVertex();
-            if(position == Position.TOP){
-                yVal = normalVertex.getY();
-            }else{
-                yVal = normalVertex.getY() + normalVertex.getSize().y - dummyVertex.getSize().y;
-            }
-            xVal -= dummyVertex.getLeftRightMargin().y + dummyVertex.getSize().x; //leftmost x value of this iv
-            dummyVertex.setX(xVal);
-            dummyVertex.setY(yVal);
-            xVal -= dummyVertex.getLeftRightMargin().x; //set to end of actual iv left margin
+            if(!fixDummyPositions){ //only set vertex positions if corresponding boolean is not set
+				if(position == Position.TOP){
+					yVal = normalVertex.getY();
+				}else{
+					yVal = normalVertex.getY() + normalVertex.getSize().y - dummyVertex.getSize().y;
+				}
+				xVal -= dummyVertex.getLeftRightMargin().y + dummyVertex.getSize().x; //leftmost x value of this iv
+				dummyVertex.setX(xVal);
+				dummyVertex.setY(yVal);
+				xVal -= dummyVertex.getLeftRightMargin().x; //set to end of actual iv left margin
+			}
 
-            EdgePath path = ie.getPath();
-            if(position == Position.TOP){
-                path.addPoint(new DoublePoint(normalVertex.getX(),dummyVertex.getY() + dummyVertex.getSize().y + idx*leftEdgeDist));//first point: on the Vertex's left side
-                path.addPoint(new DoublePoint(dummyVertex.getX() + dummyVertex.getSize().x / 2,dummyVertex.getY() + dummyVertex.getSize().y + idx*leftEdgeDist));//second point: below the middle of the IV's bottom
-                path.addPoint(new DoublePoint(dummyVertex.getX() + dummyVertex.getSize().x / 2,dummyVertex.getY() + dummyVertex.getSize().y)); //third point: middle of the IV's bottom
-            }else{ //case: edges being on bottom line of connected vertex
-                path.addPoint(new DoublePoint(normalVertex.getX(),dummyVertex.getY() - idx*leftEdgeDist));//first point: on the Vertex's left side
-                path.addPoint(new DoublePoint(dummyVertex.getX() + dummyVertex.getSize().x / 2,dummyVertex.getY() - idx*leftEdgeDist));//second point: on top of the IV's top
-                path.addPoint(new DoublePoint(dummyVertex.getX() + dummyVertex.getSize().x / 2, dummyVertex.getY())); //third point: middle of the IV's top
-            }
-            if(ie.getDummyLocation() == InterproceduralEdge.DummyLocation.SOURCE){//from dummyVertex to normalVertex -> wrong direction: turn EdgePath
-                Collections.reverse(path.getNodes());
-            }
-            idx++;
+			if(nonIsolatedDummies.contains(ie)){ //only draw edge if its dummy is not isolated
+				EdgePath path = ie.getPath();
+				if(position == Position.TOP){
+					path.addPoint(new DoublePoint(normalVertex.getX(),dummyVertex.getY() + dummyVertex.getSize().y + idx*leftEdgeDist));//first point: on the Vertex's left side
+					path.addPoint(new DoublePoint(dummyVertex.getX() + dummyVertex.getSize().x / 2,dummyVertex.getY() + dummyVertex.getSize().y + idx*leftEdgeDist));//second point: below the middle of the IV's bottom
+					path.addPoint(new DoublePoint(dummyVertex.getX() + dummyVertex.getSize().x / 2,dummyVertex.getY() + dummyVertex.getSize().y)); //third point: middle of the IV's bottom
+				}else{ //case: edges being on bottom line of connected vertex
+					path.addPoint(new DoublePoint(normalVertex.getX(),dummyVertex.getY() - idx*leftEdgeDist));//first point: on the Vertex's left side
+					path.addPoint(new DoublePoint(dummyVertex.getX() + dummyVertex.getSize().x / 2,dummyVertex.getY() - idx*leftEdgeDist));//second point: on top of the IV's top
+					path.addPoint(new DoublePoint(dummyVertex.getX() + dummyVertex.getSize().x / 2, dummyVertex.getY())); //third point: middle of the IV's top
+				}
+				if(ie.getDummyLocation() == InterproceduralEdge.DummyLocation.SOURCE){//from dummyVertex to normalVertex -> wrong direction: turn EdgePath
+					Collections.reverse(path.getNodes());
+				}
+				idx++;
+			}
         }
         xVal = (normalVertex.getX() + normalVertex.getSize().x); //rightmost x coordinate of the normalVertex
         idx = 1;
         for(InterproceduralEdge ie : targetIEs){//draw IE's with target dummy to the right side of the normalVertex
             JoanaVertex dummyVertex = ie.getDummyVertex();
-            if(position == Position.TOP){
-                yVal = normalVertex.getY();
-            }else{
-                yVal = normalVertex.getY() + normalVertex.getSize().y - dummyVertex.getSize().y;
-            }
-            xVal += dummyVertex.getLeftRightMargin().x; //rightmost value of dummie's left margin/its x-coordinte
-            dummyVertex.setX(xVal);
-            dummyVertex.setY(yVal);
-            xVal += dummyVertex.getSize().x + dummyVertex.getLeftRightMargin().y; //rightmost value of its right margin
-            EdgePath path = ie.getPath();
-            if(position == Position.TOP){
-                path.addPoint(new DoublePoint(normalVertex.getX() + normalVertex.getSize().x,dummyVertex.getY() + dummyVertex.getSize().y + idx*rightEdgeDist));//first point: on the normal's right side
-                path.addPoint(new DoublePoint(dummyVertex.getX() + dummyVertex.getSize().x / 2,dummyVertex.getY() + dummyVertex.getSize().y + idx*rightEdgeDist));//second point: below the middle of the dummy's's bottom
-                path.addPoint(new DoublePoint(dummyVertex.getX() + dummyVertex.getSize().x / 2,dummyVertex.getY() + dummyVertex.getSize().y)); //third point: middle of the dummy's bottom
-            }else{ //case: edges being on bottom line of connected vertex
-                path.addPoint(new DoublePoint(normalVertex.getX() + normalVertex.getSize().x,dummyVertex.getY() - idx*rightEdgeDist));//first point: on the normal's right side
-                path.addPoint(new DoublePoint(dummyVertex.getX() + dummyVertex.getSize().x / 2,dummyVertex.getY() - idx*rightEdgeDist));//second point: on top of the dummy's top
-                path.addPoint(new DoublePoint(dummyVertex.getX() + dummyVertex.getSize().x / 2, dummyVertex.getY())); //third point: middle of the dummy's top
-            }
-            if(ie.getDummyLocation() == InterproceduralEdge.DummyLocation.SOURCE){//from dummyVertex -> wrong direction: turn EdgePath
-                Collections.reverse(path.getNodes());
-            }
-            idx++;
+            if(!fixDummyPositions){ //only set vertex positions if corresponding boolean is not set
+				if(position == Position.TOP){
+					yVal = normalVertex.getY();
+				}else{
+					yVal = normalVertex.getY() + normalVertex.getSize().y - dummyVertex.getSize().y;
+				}
+				xVal += dummyVertex.getLeftRightMargin().x; //rightmost value of dummie's left margin/its x-coordinte
+				dummyVertex.setX(xVal);
+				dummyVertex.setY(yVal);
+				xVal += dummyVertex.getSize().x + dummyVertex.getLeftRightMargin().y; //rightmost value of its right margin
+			}
+
+			if(nonIsolatedDummies.contains(ie)){ //only draw edge if its dummy is not isolated
+				EdgePath path = ie.getPath();
+				if(position == Position.TOP){
+					path.addPoint(new DoublePoint(normalVertex.getX() + normalVertex.getSize().x,dummyVertex.getY() + dummyVertex.getSize().y + idx*rightEdgeDist));//first point: on the normal's right side
+					path.addPoint(new DoublePoint(dummyVertex.getX() + dummyVertex.getSize().x / 2,dummyVertex.getY() + dummyVertex.getSize().y + idx*rightEdgeDist));//second point: below the middle of the dummy's's bottom
+					path.addPoint(new DoublePoint(dummyVertex.getX() + dummyVertex.getSize().x / 2,dummyVertex.getY() + dummyVertex.getSize().y)); //third point: middle of the dummy's bottom
+				}else{ //case: edges being on bottom line of connected vertex
+					path.addPoint(new DoublePoint(normalVertex.getX() + normalVertex.getSize().x,dummyVertex.getY() - idx*rightEdgeDist));//first point: on the normal's right side
+					path.addPoint(new DoublePoint(dummyVertex.getX() + dummyVertex.getSize().x / 2,dummyVertex.getY() - idx*rightEdgeDist));//second point: on top of the dummy's top
+					path.addPoint(new DoublePoint(dummyVertex.getX() + dummyVertex.getSize().x / 2, dummyVertex.getY())); //third point: middle of the dummy's top
+				}
+				if(ie.getDummyLocation() == InterproceduralEdge.DummyLocation.SOURCE){//from dummyVertex -> wrong direction: turn EdgePath
+					Collections.reverse(path.getNodes());
+				}
+				idx++;
+			}
         }
     }
 	
@@ -859,7 +995,7 @@ public class MethodGraphLayout extends LayoutAlgorithm<MethodGraph> {
 		return fromOutEdges;
 	}
 	
-	private List<FieldAccess> expandFieldAccesses(MethodGraph graph, List<FieldAccess> fasToExpand) {
+	private List<FieldAccess> expandFieldAccesses(MethodGraph graph, List<FieldAccess> fasToExpand, boolean fixVertexPositions) {
 
 		// Fill a map from id to edge for all outgoing edges of field accesses to match them later
 		// with the new edges of the graph to the specific vertices in the field access
@@ -872,6 +1008,9 @@ public class MethodGraphLayout extends LayoutAlgorithm<MethodGraph> {
 
 		List<FieldAccess> fas = graph.expandFieldAccesses(fasToExpand);
 		Set<JoanaEdge> copied = new HashSet<>();
+
+		if(fixVertexPositions) //TODO: check if it works properly. If vertex positions are fixed, they don't have to be set
+			return fas;
 
 		for (FieldAccess fa : fas) {
 

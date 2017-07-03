@@ -173,10 +173,10 @@ public class SugiyamaLayoutAlgorithm<G extends DirectedGraph> extends LayoutAlgo
 	 * @param edges edges that connect vertices of adjacent layers
 	 * @param paths paths describing edges connecting vertices of two not adjacent layers
 	 */
-	public void drawEdgesNew(Set<Vertex> vertices, Set<DirectedEdge> edges, Set<DirectedSupplementEdgePath> paths){
+	public void redrawEdges(Set<Vertex> vertices, Set<DirectedEdge> edges, Set<DirectedSupplementEdgePath> paths){
 		SugiyamaGraph sugyGraph = new SugiyamaGraph(vertices, edges, paths);
 		drawer.drawEdges(sugyGraph);	//draw edges
-		this.sugyGraph = sugyGraph;
+		//this.sugyGraph = sugyGraph; TODO: overthink if its necessary that the sugiyama graph should change if only edges have been drawn new
 	}
 
 	/**

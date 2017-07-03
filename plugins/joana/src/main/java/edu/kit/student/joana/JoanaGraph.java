@@ -109,10 +109,14 @@ public abstract class JoanaGraph
         return vertexFiltered;
     }
 
+    /**
+     * An interprocedural edge will be removed in filtering only if
+     * The normal vertex or the dummy vertex have been filtered.
+     * Filtering the edge itself has no effect, as the dummy is drawn nevertheless
+     */
     public Set<InterproceduralEdge> removeFilteredInterproceduralEdges(Set<InterproceduralEdge> edges){
-        Set<InterproceduralEdge> edgeFiltered = edges.stream().filter(e -> edgeFilter.stream().allMatch(f -> f.getPredicate().negate().test(e))).collect(Collectors.toSet());
-        Set<InterproceduralEdge> vertexFiltered = new HashSet<>(edgeFiltered);
-        for (InterproceduralEdge edge : edgeFiltered) {
+        Set<InterproceduralEdge> vertexFiltered = new HashSet<>(edges);
+        for (InterproceduralEdge edge : edges) {
             JoanaVertex dummy = edge.getDummyVertex();
             JoanaVertex normal = edge.getNormalVertex();
             if (vertexFilter.stream().anyMatch(f -> f.getPredicate().test(dummy) || f.getPredicate().test(normal))) {
