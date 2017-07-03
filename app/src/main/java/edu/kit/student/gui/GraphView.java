@@ -230,8 +230,8 @@ public class GraphView extends Pane {
 
 		model.backup();
 		assert !needLayout();
-		model.needLayout.setValue(needLayout());
-		model.canOptimize.setValue(layout.canOptimizeEdges());
+		model.needLayoutProperty.setValue(needLayout());
+		model.layoutCanOptimizeProperty.setValue(layout.canOptimizeEdges());
 		FilterDialogController fdc = FilterDialogController.showDialog(model);
 		fdc.initOwner(this.getScene().getWindow());
 
@@ -245,9 +245,9 @@ public class GraphView extends Pane {
 		});
 
 		model.observableVertexFilters().addListener((ListChangeListener<VertexFilter>) c ->
-				model.needLayout.setValue(needLayout()));
+				model.needLayoutProperty.setValue(needLayout()));
 		model.observableEdgeFilters().addListener((ListChangeListener<EdgeFilter>) c ->
-				model.needLayout.setValue(needLayout()));
+				model.needLayoutProperty.setValue(needLayout()));
 
 
 		// On Apply and Layout apply the filters and relayout the graph.

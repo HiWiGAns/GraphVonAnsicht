@@ -85,14 +85,17 @@ public class FilterDialogController extends Dialog<ButtonType> {
 
         // Disable apply button when earlier disabled filter are enabled.
         final Button btnApply = (Button) getDialogPane().lookupButton(ButtonType.APPLY);
-        model.needLayout.addListener((observable, oldValue, newValue) -> btnApply.setDisable(newValue));
-        btnApply.setDisable(model.needLayout.getValue());
+        model.needLayoutProperty.addListener((observable, oldValue, newValue) -> btnApply.setDisable(newValue));
+        btnApply.setDisable(model.needLayoutProperty.getValue());
 
-        model.canOptimize.addListener((observable, oldValue, newValue)
-                -> cbOptimize.setDisable(!model.canOptimize.get() || model.needLayout.get()));
-        model.needLayout.addListener((observable, oldValue, newValue)
-                -> cbOptimize.setDisable(!model.canOptimize.get() || model.needLayout.get()));
-        cbOptimize.setDisable(!model.canOptimize.getValue());
+        model.layoutCanOptimizeProperty.addListener((observable, oldValue, newValue)
+                -> cbOptimize.setDisable(model.canOptimize()));
+        model.needLayoutProperty.addListener((observable, oldValue, newValue) -> {
+            cbOptimize.setDisable(!model.canOptimize());
+            if (!model.canOptimize())
+                cbOptimize.setSelected(false);
+        });
+        cbOptimize.setDisable(!model.layoutCanOptimizeProperty.getValue());
         cbOptimize.selectedProperty().addListener((observable, oldValue, newValue) -> model.setOptimize(newValue));
         cbOptimize.setSelected(model.optimize());
     }

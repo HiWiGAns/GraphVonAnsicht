@@ -47,8 +47,18 @@ public class FilterModel {
         eFilter.addAll(edgeFilters);
     }
 
-    public final BooleanProperty canOptimize = new SimpleBooleanProperty(true);
-    public final BooleanProperty needLayout = new SimpleBooleanProperty(true);
+    public final BooleanProperty layoutCanOptimizeProperty = new SimpleBooleanProperty(true);
+    public final BooleanProperty needLayoutProperty = new SimpleBooleanProperty(true);
+
+    /**
+     * Returns true if the at this state the filter could be applied, while fixing the vertex positions.
+     * I.e. the layout is able to handle a graph with fixed vertices and no relayout is needed due to not layouted
+     * vertices.
+     * @return if the filter could be applied, while fixing the vertex positions.
+     */
+    public boolean canOptimize() {
+        return layoutCanOptimizeProperty.get() && !needLayoutProperty.get();
+    }
 
     /**
      * Indicates if the filters should be applied without relayout, the edges should be optimized.
