@@ -33,4 +33,8 @@ public class JoanaEdgeFilter extends EdgeFilter {
         };
 	}
 
+    @Override
+    public String toString() {
+	    return "[JoanaEdgefilter: " + kind + "]";
+    }
 }

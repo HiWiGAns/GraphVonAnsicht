@@ -3,6 +3,7 @@ package edu.kit.student.plugin;
 import edu.kit.student.util.LanguageManager;
 
 public class Filter {
+
     protected String name;
 
     public Filter(String name) {
@@ -37,10 +38,16 @@ public class Filter {
 
     @Override
     public boolean equals(Object o) {
-    	if(o instanceof VertexFilter) {
-            return (name.compareTo(((VertexFilter) o).name) == 0);
-    	} else {
-    		return super.equals(o);
-    	}
+        if (this == o) return true;
+        if (!(o instanceof Filter)) return false;
+
+        Filter filter = (Filter) o;
+
+        return getName() != null ? getName().equals(filter.getName()) : filter.getName() == null;
+    }
+
+    @Override
+    public int hashCode() {
+        return getName() != null ? getName().hashCode() : 0;
     }
 }

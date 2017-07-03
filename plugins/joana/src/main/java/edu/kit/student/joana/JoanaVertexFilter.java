@@ -33,4 +33,9 @@ public class JoanaVertexFilter extends VertexFilter {
             return false;
         };
 	}
+
+    @Override
+    public String toString() {
+        return "[JoanaVertexFilter: " + kind + "]";
+    }
 }

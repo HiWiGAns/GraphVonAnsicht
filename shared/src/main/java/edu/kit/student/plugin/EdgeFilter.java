@@ -9,7 +9,7 @@ import java.util.function.Predicate;
  * To check if an edge passes through this filter, 
  * the client can specify it in {@code matches(Edge edge)}.
  */
-public abstract class EdgeFilter extends Filter{
+public abstract class EdgeFilter extends Filter {
 
     public EdgeFilter(String name) {
         super(name);
@@ -20,13 +20,4 @@ public abstract class EdgeFilter extends Filter{
      * @return Predicate
      */
     public abstract Predicate<Edge> getPredicate();
-
-    @Override
-    public boolean equals(Object o) {
-    	if(o instanceof EdgeFilter) {
-            return (name.compareTo(((EdgeFilter) o).name) == 0);
-    	} else {
-    		return super.equals(o);
-    	}
-    }
 }
