@@ -253,10 +253,11 @@ public class GraphView extends Pane {
 		// On Apply and Layout apply the filters and relayout the graph.
 		fdc.showAndWait().filter(FilterDialogController.APPLYANDLAYOUT::equals).ifPresent(b -> {
 			if (model.changedSinceBackup()) {
-			    if (model.optimize())
+			    if (model.isFixVertices())
 			        layout.setFixVertices(true);
 				applyAndLayout(model.getVertexFilters(), model.getEdgeFilters());
 				layout.setFixVertices(false);
+				assert !needLayout();
 			}
         });
 	}

@@ -71,9 +71,10 @@ public class FilterDialogController extends Dialog<ButtonType> {
     private DialogPane dialogPane;
 
     @FXML
-    private CheckBox cbOptimize;
+    private CheckBox cbFixVertices;
 
     /**
+     * Initializes the filter model belonging to the filter dialog controlled by this controller.
      *
      * @param model the model holding the state of activated and possible filter options
      */
@@ -101,15 +102,15 @@ public class FilterDialogController extends Dialog<ButtonType> {
 
         // Disable ad deselect the fix vertex check box if appropriate.
         model.layoutCanOptimizeProperty.addListener((observable, oldValue, newValue)
-                -> cbOptimize.setDisable(model.canOptimize()));
+                -> cbFixVertices.setDisable(model.canOptimize()));
         model.needLayoutProperty.addListener((observable, oldValue, newValue) -> {
-            cbOptimize.setDisable(!model.canOptimize());
+            cbFixVertices.setDisable(!model.canOptimize());
             if (!model.canOptimize())
-                cbOptimize.setSelected(false);
+                cbFixVertices.setSelected(false);
         });
-        cbOptimize.setDisable(!model.layoutCanOptimizeProperty.getValue());
-        cbOptimize.selectedProperty().addListener((observable, oldValue, newValue) -> model.setOptimize(newValue));
-        cbOptimize.setSelected(model.optimize());
+        cbFixVertices.setDisable(!model.layoutCanOptimizeProperty.getValue());
+        cbFixVertices.selectedProperty().addListener((observable, oldValue, newValue) -> model.setFixVertices(newValue));
+        cbFixVertices.setSelected(model.isFixVertices());
     }
 
     /**
@@ -117,7 +118,7 @@ public class FilterDialogController extends Dialog<ButtonType> {
      * @return true if btnApply should be disabled, false otherwise.
      */
     private boolean shouldDisableBtnApply() {
-        return model.needLayoutProperty.get() || !model.changedSinceBackup();
+        return model.needLayoutProperty.get();
     }
 
     /**
@@ -125,7 +126,7 @@ public class FilterDialogController extends Dialog<ButtonType> {
      * @return true if btnApplyAndLayout should be disabled, false otherwise.
      */
     private boolean shouldDisableBtnApplyAndLayout() {
-        return !model.changedSinceBackup();
+        return false; //!model.changedSinceBackup();
     }
 
     public static FilterDialogController showDialog(FilterModel model) {

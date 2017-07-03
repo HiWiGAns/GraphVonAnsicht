@@ -63,22 +63,22 @@ public class FilterModel {
     /**
      * Indicates if the filters should be applied without relayout, the edges should be optimized.
      */
-    private boolean optimize;
+    private boolean fixVertices;
 
     /**
      * Indicates if the filters should be applied without relayout, the edges should be optimized.
      * @return true if the edges should be optimized, false otherwise
      */
-    boolean optimize() {
-        return optimize;
+    boolean isFixVertices() {
+        return fixVertices;
     }
 
     /**
      * Sets whether the edges should be optimized when applying the filters without relayout
-     * @param optimize the indicator if edges should be optimized
+     * @param fixVertices the indicator if edges should be optimized
      */
-    void setOptimize(boolean optimize) {
-        this.optimize = optimize;
+    void setFixVertices(boolean fixVertices) {
+        this.fixVertices = fixVertices;
     }
 
     ObservableList<VertexFilter> observableVertexFilters() {
