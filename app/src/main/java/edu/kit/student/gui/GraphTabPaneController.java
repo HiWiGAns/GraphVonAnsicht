@@ -2,6 +2,7 @@ package edu.kit.student.gui;
 
 import edu.kit.student.graphmodel.ViewableGraph;
 import edu.kit.student.objectproperty.GAnsProperty;
+import edu.kit.student.plugin.LayoutOption;
 import javafx.beans.property.Property;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.ObservableList;
@@ -12,28 +13,44 @@ import org.slf4j.LoggerFactory;
 
 class GraphTabPaneController {
 
-    final Property<GraphView> graphViewProperty = new SimpleObjectProperty<>();
+    final Property<GraphViewPaneStack> graphViewPanesProperty = new SimpleObjectProperty<>();
 
-    GraphTabPaneController() {
+    private GraphTabPane tabPane;
+    private GAnsApplication application;
+
+    private final Logger logger = LoggerFactory.getLogger(GraphTabPaneController.class);
+
+    GraphTabPaneController(GAnsApplication application) {
+        this.application = application;
         tabPane = new GraphTabPane();
         tabPane.setId("GraphViewTabPane");
         tabPane.getSelectionModel().selectedItemProperty().addListener((obs, old, val) ->
-                graphViewProperty.setValue(val == null
+                graphViewPanesProperty.setValue(val == null
                         ? null
-                        : ((GraphViewTab) val).getGraphViewPanes().getGraphView()
+                        : ((GraphViewTab) val).getGraphViewPanes()
         ));
     }
-
-    private GraphTabPane tabPane;
-
-    private final Logger logger = LoggerFactory.getLogger(GraphTabPaneController.class);
 
     GraphTabPane getTabPane() {
         return tabPane;
     }
 
     GraphView getGraphView() {
-        return graphViewProperty.getValue();
+        return graphViewPanesProperty.getValue().getGraphView();
+    }
+
+    void openGraph(ViewableGraph graph) {
+        LayoutOption option = graph.getDefaultLayout();
+        option.chooseLayout();
+        openGraph(graph, option);
+    }
+
+    void openGraph(ViewableGraph graph, LayoutOption layoutOption) {
+        if (!openTab(graph)) {
+            layoutOption.applyLayout();
+            openNewGraph(graph, layoutOption);
+            getGraphView().setCurrentLayoutOption(layoutOption);
+        }
     }
 
     private void loadGraphIntoCurrentTab(ViewableGraph graph) {
@@ -43,7 +60,7 @@ class GraphTabPaneController {
         getGraphView().setGraph(graph);
     }
 
-    private void openNewGraph(ViewableGraph graph) {
+    private void openNewGraph(ViewableGraph graph, LayoutOption layoutOption) {
         newEmptyTab();
         loadGraphIntoCurrentTab(graph);
     }
@@ -60,14 +77,8 @@ class GraphTabPaneController {
         return found;
     }
 
-    void openGraph(ViewableGraph graph) {
-        if (!openTab(graph)) {
-            openNewGraph(graph);
-        }
-    }
-
-    void newEmptyTab() {
-        GraphView graphView = new GraphView(this);
+    private void newEmptyTab() {
+        GraphView graphView = new GraphView(application);
         GraphViewPaneStack graphViewPaneStack = new GraphViewPaneStack(graphView);
         GraphViewSelectionController selectionController
                 = new GraphViewSelectionController(graphView.getSelectionModel(), graphViewPaneStack);

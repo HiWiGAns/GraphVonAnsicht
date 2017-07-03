@@ -45,7 +45,7 @@ public class GraphView extends Pane {
     
 	private GroupManager groupManager;
 	
-	private final GraphTabPaneController tabPaneController;
+	private final GAnsApplication application;
 
 	/**
 	 * Hold the filters, which have been active in during the last layout.
@@ -56,8 +56,8 @@ public class GraphView extends Pane {
 	/**
 	 * Constructor.
 	 */
-	public GraphView(GraphTabPaneController tabPaneController) {
-		this.tabPaneController = tabPaneController;
+	public GraphView(GAnsApplication application) {
+		this.application = application;
 		this.selectionModel = new GraphViewSelectionModel(this);
 		selectionModel.getSelectedShapes().addListener(onSelectionChanged);
 	}
@@ -162,7 +162,7 @@ public class GraphView extends Pane {
 					MenuItem item = new MenuItem(LanguageManager.getInstance().get("ctx_open_graph"));
 					dynamicMenuListItems.add(item);
 					// set action to open new graph
-					item.setOnAction(event -> GraphView.this.tabPaneController.openGraph(link.getGraph()));
+					item.setOnAction(event -> GraphView.this.application.navigateTo(link));
 					GraphView.this.contextMenu.getItems().add(menuIdx++, item);
 				}
 				menuIdx = addDynamicMenuItemsForActions(getFactory().getGraph().getVertexActions(vertex), contextMenu, menuIdx);

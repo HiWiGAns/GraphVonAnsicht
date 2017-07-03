@@ -1,8 +1,11 @@
 package edu.kit.student.gui;
 
+import javafx.animation.AnimationTimer;
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.ReadOnlyDoubleProperty;
 import javafx.beans.property.SimpleDoubleProperty;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.event.EventHandler;
 import javafx.geometry.Point2D;
 import javafx.scene.Group;
@@ -49,6 +52,7 @@ public class GraphViewPaneStack {
 
     private final AnchorPane wrapper;
     private final GraphView graphView;
+    private final PanAndZoomPane panAndZoomPane;
 
     private final DoubleProperty scaleProperty = new SimpleDoubleProperty(1.0d);
     // Captures the last scroll direction and length
@@ -81,7 +85,7 @@ public class GraphViewPaneStack {
         final Group group = new Group();
         group.getChildren().add(this.graphView);
 
-        final PanAndZoomPane panAndZoomPane = new PanAndZoomPane();
+        panAndZoomPane = new PanAndZoomPane();
         scaleProperty.bind(panAndZoomPane.myScale);
 		deltaY.bind(panAndZoomPane.deltaY);
 		panAndZoomPane.getChildren().add(group);
@@ -108,7 +112,7 @@ public class GraphViewPaneStack {
      * scaled with.
      * @return the scale property
      */
-    public ReadOnlyDoubleProperty getScaleProperty() {
+    ReadOnlyDoubleProperty getScaleProperty() {
         return this.scaleProperty;
     }
 
@@ -147,7 +151,11 @@ public class GraphViewPaneStack {
         return wrapper;
     }
 
-    Pane getUIPane() {
+	/**
+	 * Returns the pane used for drawing GUI elements.
+	 * @return the gui pane
+	 */
+	Pane getUIPane() {
 	    return wrapper;
 	}
 
@@ -157,14 +165,44 @@ public class GraphViewPaneStack {
 	 * @param p the point to center
 	 */
 	public void center(Point2D p) {
-		// Get current center point
-		Point2D center = new Point2D(wrapper.getTranslateX() + wrapper.getWidth() / 2, wrapper.getTranslateY() + wrapper.getHeight() / 2);
-		center = graphView.sceneToLocal(wrapper.localToScene(center));
-		Point2D delta = center.subtract(p);
-		graphView.setTranslateX(graphView.getTranslateX() + delta.getX());
-		graphView.setTranslateY(graphView.getTranslateY() + delta.getY());
+	    p = wrapper.sceneToLocal(graphView.localToScene(p));
+		double dx = -(p.getX() - (wrapper.getBoundsInLocal().getWidth() / 2));
+		double dy = -(p.getY() - (wrapper.getBoundsInLocal().getHeight() / 2));
+		long startTime = System.nanoTime();
+		double xOrigin = panAndZoomPane.getTranslateX();
+		double yOrigin = panAndZoomPane.getTranslateY();
+		new AnimationTimer() {
+
+			long length = 200000000;
+			@Override
+			public void handle(long now) {
+				double part = Math.min(1.0, (now - startTime) / (double) length);
+				panAndZoomPane.setTranslateX(dx*part + xOrigin);
+				panAndZoomPane.setTranslateY(dy*part + yOrigin);
+			    if (now - startTime > length) {
+			    	this.stop();
+				}
+			}
+		}.start();
 	}
 
+	public void runAfterLayout(Runnable runnable) {
+		if(runnable == null) throw new IllegalArgumentException("The runnable to run can not be null");
+		if (!wrapper.isNeedsLayout()) {
+			runnable.run();
+			return;
+		}
+		ChangeListener<Boolean> runner = new ChangeListener<Boolean>() {
+			@Override
+			public void changed(ObservableValue<? extends Boolean> observable, Boolean oldValue, Boolean newValue) {
+				if (!newValue) {
+					runnable.run();
+					observable.removeListener(this);
+				}
+			}
+		};
+		wrapper.needsLayoutProperty().addListener(runner);
+	}
 
 	private class PanAndZoomPane extends Pane {
 
@@ -340,8 +378,17 @@ public class GraphViewPaneStack {
 						panAndZoomPane.fitWidth();
 					}
 //				} else if (event.getButton().equals(MouseButton.PRIMARY)) {
-//					if (event.getClickCount() == 2) {
-//						center(new Point2D(0, 0));
+//					if (event.isControlDown()) {
+//					    VertexShape vertexShape = graphView.getSelectionModel().getSelectedVertexShapes().isEmpty() ?
+//								null : graphView.getSelectionModel().getSelectedVertexShapes().iterator().next();
+//					    if (vertexShape != null) {
+//							Vertex vertex = graphView.getFactory().getVertexFromShape(vertexShape);
+//							center(new Point2D(vertex.getX() + vertexShape.getWidth() / 2,
+//									vertex.getY() + vertexShape.getHeight() / 2));
+//						} else {
+//					    	Point2D p = graphView.sceneToLocal(new Point2D(event.getSceneX(), event.getSceneY()));
+//					    	center(p);
+//						}
 //					}
 				}
 			}

@@ -1,20 +1,25 @@
 package edu.kit.student.joana.callgraph;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-
 import edu.kit.student.graphmodel.builder.GraphBuilderException;
 import edu.kit.student.graphmodel.builder.IEdgeBuilder;
 import edu.kit.student.graphmodel.builder.IGraphBuilder;
 import edu.kit.student.graphmodel.builder.IVertexBuilder;
-import edu.kit.student.joana.*;
+import edu.kit.student.joana.CallGraphVertex;
+import edu.kit.student.joana.InterproceduralEdge;
+import edu.kit.student.joana.JoanaEdge;
 import edu.kit.student.joana.JoanaEdge.EdgeKind;
+import edu.kit.student.joana.JoanaEdgeBuilder;
+import edu.kit.student.joana.JoanaObjectPool;
+import edu.kit.student.joana.JoanaVertex;
 import edu.kit.student.joana.methodgraph.MethodGraph;
 import edu.kit.student.joana.methodgraph.MethodGraphBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * The CallGraphBuilder implements an {@link IGraphBuilder} and builds 
@@ -149,10 +154,10 @@ public class CallGraphBuilder implements IGraphBuilder {
 
         //edges between two MethodGraphs. All InterproceduralEdges can be found in callEdges, these are also edges not from the same MethodGraph.
         //search in callEdges for interproceduralEdges, create a new InterproceduralEdge for both MethodGraphs the edge connects
-        HashMap<Integer,Set<InterproceduralEdge>> mgIdToIESet = new HashMap<>();
+        HashMap<MethodGraph, Set<InterproceduralEdge>> mgToIESet = new HashMap<>();
         //add a mapping of MethodGraph id to set of interprocedural edges. (its done for all MethodGraphs)
         for(MethodGraph mg : vertexIDToMG.values()){
-        	mgIdToIESet.put(mg.getID(), new HashSet<>());
+        	mgToIESet.put(mg, new HashSet<>());
         }
         logger.info(callEdges.size() + " callEdges to process.");
         for(JoanaEdge callEdge : callEdges){
@@ -160,21 +165,17 @@ public class CallGraphBuilder implements IGraphBuilder {
         	JoanaVertex target = callEdge.getTarget();
         	MethodGraph sourceMG = vertexIDToMG.get(source.getName());
         	MethodGraph targetMG = vertexIDToMG.get(target.getName());
-        	String sourceMGname = sourceMG.getName();
-        	String targetMGname = targetMG.getName();
-        	int sourceMGid = sourceMG.getID();
-        	int targetMGid = targetMG.getID();
         	//adding two interproc edges to MG of source vertex, and target respectively
-            mgIdToIESet.get(sourceMGid).add(new InterproceduralEdge(callEdge,sourceMGid,sourceMGname, InterproceduralEdge.DummyLocation.TARGET));
-            mgIdToIESet.get(targetMGid).add(new InterproceduralEdge(callEdge,targetMGid,targetMGname, InterproceduralEdge.DummyLocation.SOURCE));
+            mgToIESet.get(sourceMG).add(new InterproceduralEdge(callEdge, sourceMG, targetMG, InterproceduralEdge.DummyLocation.TARGET));
+            mgToIESet.get(targetMG).add(new InterproceduralEdge(callEdge, targetMG, sourceMG, InterproceduralEdge.DummyLocation.SOURCE));
         }
         stopTime = System.currentTimeMillis();
         logger.info("Building interprocedural edges took " + (stopTime - startTime));
         startTime = stopTime;
         //set the interprocedural edges of a method graph
         for(MethodGraph mg : methodGraphs){
-        	if(mgIdToIESet.containsKey(mg.getID())){
-        		mg.setInterproceduralEdges(mgIdToIESet.get(mg.getID()));
+        	if(mgToIESet.containsKey(mg)){
+        		mg.setInterproceduralEdges(mgToIESet.get(mg));
         	}
         }
         stopTime = System.currentTimeMillis();

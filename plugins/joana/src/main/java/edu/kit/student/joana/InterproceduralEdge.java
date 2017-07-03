@@ -1,5 +1,7 @@
 package edu.kit.student.joana;
 
+import edu.kit.student.graphmodel.VertexReference;
+import edu.kit.student.joana.methodgraph.MethodGraph;
 import edu.kit.student.objectproperty.GAnsProperty;
 import edu.kit.student.util.DoublePoint;
 import edu.kit.student.util.IntegerPoint;
@@ -8,11 +10,9 @@ import java.util.List;
 
 /**
  */
-public class InterproceduralEdge extends JoanaEdge{
+public class InterproceduralEdge extends JoanaEdge {
 
     private JoanaEdge wrappedEdge;
-    private Integer dummyGraphId;
-    private String dummyGraphName;
     private DummyLocation location;
     private JoanaVertex normalVertex;
     private ForeignGraphDummyVertex dummyVertex;
@@ -24,26 +24,27 @@ public class InterproceduralEdge extends JoanaEdge{
      * In every MethodGraph there is one normal vertex and one foreign vertex that will be represented by a dummy
      *
      * @param edge edge to build a InterproceduralEdge of
-     * @param dummyGraphId id of the graph that contains the dummy vertex
-     * @param dummyGraphName name of the graph that contains the dummy
+     * @param dummyGraph the graph that contains the dummy vertex
+     * @param referenceGraph the graph, which contains the vertex represented by the dummy
      * @param location whether the source or target vertex should be a dummy
      */
-    public InterproceduralEdge(JoanaEdge edge, Integer dummyGraphId, String dummyGraphName, DummyLocation location) { //TODO: maybe new constructor that sets source and target adequately(not the edges real source and target)
+    public InterproceduralEdge(JoanaEdge edge, MethodGraph dummyGraph, MethodGraph referenceGraph, DummyLocation location) {
+        //TODO: maybe new constructor that sets source and target adequately(not the edges real source and target)
         super(edge.getName(), edge.getLabel(), edge.getSource(), edge.getTarget(), edge.getEdgeKind());
+
         this.wrappedEdge = edge;
-        this.dummyGraphId = dummyGraphId;
-        this.dummyGraphName = dummyGraphName;
         this.location = location;
+
         //setting the normal edge and the dummy, also sets source and target of this edge new,
         //because the normal and the dummy vertex will be added later in the graph, not its origin source and target vertices
-        if(location == DummyLocation.SOURCE){
-            this.dummyVertex = new ForeignGraphDummyVertex(edge.getSource(), dummyGraphName);
+        if (location == DummyLocation.SOURCE) {
+            this.dummyVertex = new ForeignGraphDummyVertex(edge.getSource(), referenceGraph);
             this.normalVertex = edge.getTarget();
-            super.setVertices(dummyVertex,normalVertex);
-        }else{
+            super.setVertices(dummyVertex, normalVertex);
+        } else {
             this.normalVertex = edge.getSource();
-            this.dummyVertex = new ForeignGraphDummyVertex(edge.getTarget(), dummyGraphName);
-            super.setVertices(normalVertex,dummyVertex);
+            this.dummyVertex = new ForeignGraphDummyVertex(edge.getTarget(), referenceGraph);
+            super.setVertices(normalVertex, dummyVertex);
         }
     }
 
@@ -60,32 +61,34 @@ public class InterproceduralEdge extends JoanaEdge{
         return dummyVertex;
     }
 
-    public enum DummyLocation{
+    public enum DummyLocation {
         SOURCE, TARGET
     }
 
-    public class ForeignGraphDummyVertex extends JoanaVertex{
+    public class ForeignGraphDummyVertex extends JoanaVertex {
 
-
-        private String graphName;
+        private MethodGraph graph;
+        private JoanaVertex vertex;
 
         /**
          * A vertex that represents a vertex from an other graph.
          *
-         *
          * @param vertex the vertex to represent
-         * @param graphName name of the graph the vertex to represents is in
+         * @param graph the graph the vertex to represents is in
          */
-        ForeignGraphDummyVertex(JoanaVertex vertex, String graphName) {
+        ForeignGraphDummyVertex(JoanaVertex vertex, MethodGraph graph) {
             super(vertex.getName(), vertex.getLabel(), vertex.getNodeKind());
-            this.graphName = graphName;
+            this.graph = graph;
+            this.vertex = vertex;
         }
 
         @Override
-        public List<GAnsProperty<?>> getProperties(){//new properties are : graph name, dummy label(already contains id and its kind)
-            List<GAnsProperty<?>> properties = super.getProperties().subList(0, 3);//get first three elements (name, label, kind)
+        public List<GAnsProperty<?>> getProperties() {
+            //new properties are : graph name, dummy label(already contains id and its kind)
+            //get first three elements (name, label, kind)
+            List<GAnsProperty<?>> properties = super.getProperties().subList(0, 3);
             assert(properties.get(1).getName().equals("label"));
-            properties.add(0, new GAnsProperty<>("graphLabel",this.graphName));
+            properties.add(0, new GAnsProperty<>("graphLabel", this.graph.getName()));
             return properties;
         }
 
@@ -93,6 +96,11 @@ public class InterproceduralEdge extends JoanaEdge{
         @Override
         public String getLabel(){
             return "";
+        }
+
+        @Override
+        public VertexReference getLink() {
+            return new VertexReference(graph, vertex);
         }
 
         @Override

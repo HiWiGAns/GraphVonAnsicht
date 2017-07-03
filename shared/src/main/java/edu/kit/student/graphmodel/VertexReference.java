@@ -9,9 +9,9 @@ package edu.kit.student.graphmodel;
 public class VertexReference {
 
     private final ViewableGraph graph;
-    private final Vertex target;
+    private final ViewableVertex target;
 
-    public VertexReference(ViewableGraph graph, Vertex target) {
+    public VertexReference(ViewableGraph graph, ViewableVertex target) {
         this.graph = graph;
         this.target = target;
     }
@@ -20,7 +20,7 @@ public class VertexReference {
         return graph;
     }
 
-    public Vertex getTarget() {
+    public ViewableVertex getTarget() {
         return target;
     }
 }

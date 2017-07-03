@@ -1,7 +1,9 @@
 package edu.kit.student.gui;
 
 import edu.kit.student.graphmodel.GraphModel;
+import edu.kit.student.graphmodel.VertexReference;
 import edu.kit.student.graphmodel.ViewableGraph;
+import edu.kit.student.graphmodel.ViewableVertex;
 import edu.kit.student.parameter.Settings;
 import edu.kit.student.plugin.Exporter;
 import edu.kit.student.plugin.Importer;
@@ -14,6 +16,7 @@ import javafx.application.Application.Parameters;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.geometry.Orientation;
+import javafx.geometry.Point2D;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
@@ -96,7 +99,7 @@ public class GAnsApplication {
 		informationView = new InformationView();
 		informationView.setId("InformationView");
 		treeInfoLayout.getItems().addAll(structureView, informationView);
-		this.graphPaneController = new GraphTabPaneController();
+		this.graphPaneController = new GraphTabPaneController(this);
 
 		SplitPane mainViewLayout = new SplitPane();
 		mainViewLayout.setDividerPosition(0, 0.75);
@@ -159,12 +162,22 @@ public class GAnsApplication {
 	 * @param graph the graph to open
 	 */
 	public void openGraph(ViewableGraph graph) {
-	    LayoutOption layoutOption = graph.getDefaultLayout();
-	    layoutOption.chooseLayout();
-	    layoutOption.applyLayout();
 		this.graphPaneController.openGraph(graph);
-		this.graphPaneController.getGraphView().setCurrentLayoutOption(layoutOption);
 	}
+
+	public void navigateTo(VertexReference vertexReference) {
+	    openGraph(vertexReference.getGraph());
+        ViewableVertex vertex = vertexReference.getTarget();
+        if (vertex != null) {
+            VertexShape shape = this.graphPaneController.getGraphView().getFactory().getShapeFromVertex(vertex);
+            this.graphPaneController.graphViewPanesProperty.getValue().runAfterLayout(() -> {
+				this.graphPaneController.graphViewPanesProperty.getValue().center(
+						new Point2D(vertex.getX() + shape.getWidth() / 2, vertex.getY() + shape.getHeight() / 2)
+				);
+			});
+        }
+	}
+
 
 	private void loadSettings() {
 		this.primaryStage.setWidth(ApplicationSettings.getInstance().getPropertyAsDouble("primary_width"));
