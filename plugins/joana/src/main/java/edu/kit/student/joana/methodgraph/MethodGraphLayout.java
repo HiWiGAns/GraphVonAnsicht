@@ -52,12 +52,12 @@ import java.util.stream.Collectors;
 public class MethodGraphLayout extends LayoutAlgorithm<MethodGraph> {
 	
     private final Logger logger = LoggerFactory.getLogger(MethodGraphLayout.class);
-    //private SugiyamaLayoutAlgorithm<FieldAccessGraph> sugiyamaLayoutAlgorithmFA; //TODO: necessary to create an extra SugiyamaLayoutAlgorithm for drawing FieldAccessGraphs (otherwise reset assigner)
+    private SugiyamaLayoutAlgorithm<FieldAccessGraph> sugiyamaLayoutAlgorithmFA; //TODO: necessary to create an extra SugiyamaLayoutAlgorithm for drawing FieldAccessGraphs (otherwise reset assigner)
 	private SugiyamaLayoutAlgorithm<MethodGraph> sugiyamaLayoutAlgorithm;
 	private Integer dummyId = -1;
 	
 	public MethodGraphLayout() {
-		//this.sugiyamaLayoutAlgorithmFA = new SugiyamaLayoutAlgorithm<>();
+		this.sugiyamaLayoutAlgorithmFA = new SugiyamaLayoutAlgorithm<>();
 		this.sugiyamaLayoutAlgorithm = new SugiyamaLayoutAlgorithm<>();
 		fixesVertices().addListener(((observable, oldValue, newValue) -> {
 			if (sugiyamaLayoutAlgorithm.fixesVertices().getValue() != newValue)
@@ -82,7 +82,7 @@ public class MethodGraphLayout extends LayoutAlgorithm<MethodGraph> {
 	 */
 	public void layout(MethodGraph graph) {
 		logger.debug("fixVertices: " + this.fixesVertices().getValue());
-		if(this.fixesVertices().getValue()){
+		if(this.fixesVertices().getValue()){//TODO: replace with sugiyamaLaoutAlgorithm.fixesVertices().getValue() if synced correctly
 			this.redrawEdges(graph);
 			return;
 		}
@@ -148,7 +148,7 @@ public class MethodGraphLayout extends LayoutAlgorithm<MethodGraph> {
 
 		this.setLastLayoutedGraph(graph); //sets the layouted representation of this graph
 
-		sugiyamaLayoutAlgorithm.setLayerAssigner(new LayerAssigner()); //replace actual assigner ba one without constraints (actual for layouting FieldAccessgraphs)
+		//sugiyamaLayoutAlgorithm.setLayerAssigner(new LayerAssigner()); //replace actual assigner by one without constraints (actual for layouting FieldAccessgraphs)
 	}
 
 	/**
@@ -161,10 +161,10 @@ public class MethodGraphLayout extends LayoutAlgorithm<MethodGraph> {
 		//printGraph(mg);
 		//collapse fas
 		List<FieldAccess> collapsedFAs = mg.collapseFieldAccesses();
-		//remove interproc edges(eventually use this step here to just redraw necessary interprocedural edges and let the dummy at its position)
 		mg.removeInterproceduralEdges();
 		//redraw graph edges
 		LayoutedGraph lg = mg.getLastLayoutedGraph();
+		System.out.println("Test order of Paths in MGL: " + lg.testOrderOfPaths());
 		if(lg == null) {
 			System.out.println("LayoutedGraph is null -> returning");
 			return;
@@ -177,6 +177,7 @@ public class MethodGraphLayout extends LayoutAlgorithm<MethodGraph> {
 
 		vertices.addAll(mg.getVertexSet());
 		edges.addAll(mg.getEdgeSet()); //graph edges. As FieldAccesses are collapsed, it contains edges to the FieldAcces-Vertex, not into the FA nor in the FA
+		System.out.println("Redrawing edges in graph with: " + vertices.size() + " vertices, " + edges.size() + " edges, and " + lg.getPaths().size() + " paths! after collapsing");
 
 		Set<Integer> edgeIDs = edges.stream().map(Edge::getID).collect(Collectors.toSet());
 		Set<Integer> vertexIDs = vertices.stream().map(Vertex::getID).collect(Collectors.toSet());
@@ -198,10 +199,30 @@ public class MethodGraphLayout extends LayoutAlgorithm<MethodGraph> {
 
 		Set<DirectedEdge> nonPathEdges = edges.stream().filter(e->!pathReplacedEdgeIDs.contains(e.getID())).collect(Collectors.toSet());
 
+		System.out.println("After filtering, collapsing, before redrawing: " + vertices.size() + " vertices, " + nonPathEdges.size() + " edges, and " + notFilteredPaths.size() + " paths!");
+
+		for(DirectedSupplementEdgePath p : notFilteredPaths){
+			System.out.println("MethodGraphLayout: ");
+			System.out.print("source-y: " + p.getReplacedEdge().getSource().getY() + "; ");
+			p.getDummyVertices().forEach(d->System.out.print("y-pos: " + d.getY() + "; "));
+			System.out.print("target-y: " + p.getReplacedEdge().getTarget().getY() + "; ");
+			System.out.print("\n");
+			List<Vertex> testList = new LinkedList<>();
+			testList.add(p.getReplacedEdge().getSource());
+			testList.addAll(p.getDummyVertices());
+			testList.add(p.getReplacedEdge().getTarget());
+			//assert(testOrderDown(testList) ^ testOrderUp(testList));
+		}
+
+
+		//TODO: the next line should not be necessary, but for what reason ever the order of the dummy changes anyhow between saving them and getting them again from the corresponding MethodGraph
+		notFilteredPaths.forEach(this::repairDummyOrder);
+
 		this.sugiyamaLayoutAlgorithm.redrawEdges(vertices, nonPathEdges, notFilteredPaths);
 
 		//expand fas
 		expandFieldAccesses(mg, collapsedFAs, true);
+		System.out.println("After expanding: " + vertices.size() + " vertices, " + nonPathEdges.size() + " edges, and " + notFilteredPaths.size() + " paths!");
 
 		//TODO: this is normally not necessary, but from what reason ever, this just works so:
 		for(DirectedSupplementEdgePath p : notFilteredPaths){
@@ -243,6 +264,46 @@ public class MethodGraphLayout extends LayoutAlgorithm<MethodGraph> {
 		collapsedFAs.forEach(fa->redrawFAEdges(mg, fa));
 		//draw interproc edges
 		drawInterproceduralEdges(mg, true);
+	}
+
+	//repairs the order of the dummies in the given path.
+	//the order is either in ascending or descending y-coordinate and depends on the y-coordinate of the source and target-vertices of the replaced edge
+	private void repairDummyOrder(DirectedSupplementEdgePath path){
+		boolean reverse = false;
+		List<Vertex> dummies = path.getDummyVertices();
+		DirectedEdge replacedEdge = path.getReplacedEdge();
+		if(dummies.size() <= 1) return;
+		if(replacedEdge.getSource().getY() > replacedEdge.getTarget().getY()) reverse = true;
+
+		dummies.sort((v1, v2) -> {
+            if (v1.getY() < v2.getY()) return -1;
+            else if (v2.getY() > v1.getY()) return 1;
+            else return 0;
+        });
+
+		if(reverse) Collections.reverse(dummies);
+	}
+
+	private boolean testOrderUp(List<Vertex> vertices){
+		boolean orderCorrectUp = true;
+		for(int i = 0; i < vertices.size() - 1; i++){
+			if(vertices.get(i).getY() >= vertices.get(i+1).getY()) {
+				orderCorrectUp = false;
+				break;
+			}
+		}
+		return orderCorrectUp;
+	}
+
+	private boolean testOrderDown(List<Vertex> vertices){
+		boolean orderCorrectDown = true;
+		for(int i = 0; i < vertices.size() - 1; i++){
+			if(vertices.get(i).getY() <= vertices.get(i+1).getY()) {
+				orderCorrectDown = false;
+				break;
+			}
+		}
+		return orderCorrectDown;
 	}
 
 	private void printGraph(MethodGraph mg){
@@ -310,8 +371,8 @@ public class MethodGraphLayout extends LayoutAlgorithm<MethodGraph> {
 	private void layoutFieldAccessGraphs(MethodGraph graph){
 		for(FieldAccess fa : graph.getFieldAccesses()){
 			FieldAccessGraph fag = fa.getGraph();
-			sugiyamaLayoutAlgorithm.layout(fag);
-			//this.sugiyamaLayoutAlgorithmFA.layout(fag);
+			//sugiyamaLayoutAlgorithm.layout(fag);
+			this.sugiyamaLayoutAlgorithmFA.layout(fag);
 		}
 	}
 
