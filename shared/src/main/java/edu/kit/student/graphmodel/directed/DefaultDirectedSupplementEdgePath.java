@@ -50,4 +50,23 @@ public class DefaultDirectedSupplementEdgePath implements DirectedSupplementEdge
 		}
 	}
 
+	@Override
+	public boolean equals(Object o) {
+		if (this == o) return true;
+		if (o == null || getClass() != o.getClass()) return false;
+
+		DefaultDirectedSupplementEdgePath that = (DefaultDirectedSupplementEdgePath) o;
+
+		if (replacedEdge != null ? !replacedEdge.equals(that.replacedEdge) : that.replacedEdge != null) return false;
+		if (dummies != null ? !dummies.equals(that.dummies) : that.dummies != null) return false;
+		return supplementEdges != null ? supplementEdges.equals(that.supplementEdges) : that.supplementEdges == null;
+	}
+
+	@Override
+	public int hashCode() {
+		int result = replacedEdge != null ? replacedEdge.hashCode() : 0;
+		result = 31 * result + (dummies != null ? dummies.hashCode() : 0);
+		result = 31 * result + (supplementEdges != null ? supplementEdges.hashCode() : 0);
+		return result;
+	}
 }
