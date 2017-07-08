@@ -164,7 +164,6 @@ public class MethodGraphLayout extends LayoutAlgorithm<MethodGraph> {
 		mg.removeInterproceduralEdges();
 		//redraw graph edges
 		LayoutedGraph lg = mg.getLastLayoutedGraph();
-		System.out.println("Test order of Paths in MGL: " + lg.testOrderOfPaths());
 		if(lg == null) {
 			System.out.println("LayoutedGraph is null -> returning");
 			return;
