@@ -70,8 +70,13 @@ public class MethodGraph extends JoanaGraph {
             }
         }
         if (entry == null) {
-            throw new IllegalArgumentException("Cannot create MethodGraph without entry vertex!");
-        }
+        	if (vertices.isEmpty()) {
+            	throw new IllegalArgumentException("Cannot create MethodGraph without entry vertex!");
+			} else {
+				this.entry = vertices.iterator().next();
+			}
+		}
+		assert this.entry != null;
         //TODO: Search for method calls etc.
         this.fieldAccesses = this.searchFieldAccesses();
         this.fieldAccessCount = new GAnsProperty<>(LanguageManager.getInstance().get("stat_fieldacc"), this.fieldAccesses.size());
@@ -240,20 +245,8 @@ public class MethodGraph extends JoanaGraph {
      * @return The entry vertex of a method.
      */
     public JoanaVertex getEntryVertex() { 
-        if (entry == null) {
-            return searchEntry();
-        }
+    	assert entry != null;
         return entry;
-    }
-
-    private JoanaVertex searchEntry() {
-        for (JoanaVertex v : getVertexSet()) {
-            if (Objects.equals(v.getName(), ENTRY_NAME)) {
-                entry = v;
-                return entry;
-            }
-        }
-        return null;
     }
 
     /**
